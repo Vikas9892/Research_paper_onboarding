@@ -20,7 +20,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.models.schema import KnowledgeState
 from src.graph.builder import AgentMemoryGraph
-from src.reasoning.engine import ReasoningEngine, ResearchIntelligenceReport
+from src.reasoning.engine import ReasoningEngine, ComprehensiveResearchReport
 
 class EvalTestCase(BaseModel):
     case_id: str
@@ -177,7 +177,7 @@ def run_evaluation_suite(engine: ReasoningEngine) -> Tuple[EvaluationMetrics, Li
         report = engine.reason(test.proposal_text)
 
         # Concept resolution check
-        c_hit = any(t in report.resolved_concepts.identified_memory_types for t in test.expected_memory_types)
+        c_hit = any(item.resolved_entity_id in test.expected_memory_types for item in report.resolved_concepts)
         if c_hit:
             correct_concept += 1
 
@@ -191,19 +191,19 @@ def run_evaluation_suite(engine: ReasoningEngine) -> Tuple[EvaluationMetrics, Li
             recall_at_3 += 1
 
         # Pitfall check
-        pitfall_ids = [p.limitation_id for p in report.known_pitfalls_and_failure_modes]
+        pitfall_ids = [p.limitation_id for p in report.historical_failure_modes]
         p_hit = test.expected_limitation_warning in pitfall_ids
         if p_hit:
             pitfall_hits += 1
 
         # Benchmark check
-        bm_ids = [b.benchmark_id for b in report.recommended_benchmarks]
+        bm_ids = [b.benchmark_id for b in report.benchmark_recommendations]
         b_hit = test.expected_benchmark in bm_ids
         if b_hit:
             benchmark_hits += 1
 
         # Reading path check: Must have all 5 stages populated
-        rp_hit = len(report.guided_reading_path) == 5
+        rp_hit = len(report.five_stage_reading_path) == 5
         if rp_hit:
             reading_path_complete += 1
 

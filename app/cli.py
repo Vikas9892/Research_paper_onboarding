@@ -1,10 +1,6 @@
 """Interactive CLI and Testable Interface for Agent Memory Research Intelligence.
 
-Provides an intuitive terminal interface for researchers and reviewers:
-- Interactive proposal exploration
-- Direct query input
-- Standalone knowledge state inspection
-- 15-case unseen evaluation benchmark runner
+Renders the complete 14-step evidence-grounded research architecture report.
 """
 
 from __future__ import annotations
@@ -22,11 +18,10 @@ if str(PROJECT_ROOT) not in sys.path:
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.markdown import Markdown
 
-from src.models.schema import KnowledgeState, EntityType, RelationshipType
+from src.models.schema import KnowledgeState
 from src.graph.builder import AgentMemoryGraph
-from src.reasoning.engine import ReasoningEngine, ResearchIntelligenceReport
+from src.reasoning.engine import ReasoningEngine, ComprehensiveResearchReport
 from src.reasoning.evaluator import run_evaluation_suite
 
 console = Console()
@@ -48,114 +43,179 @@ def load_engine() -> ReasoningEngine:
     graph = AgentMemoryGraph(KnowledgeState(**k_data))
     return ReasoningEngine(graph)
 
-def render_report(report: ResearchIntelligenceReport):
-    """Render structured research intelligence report using Rich."""
+def render_report(report: ComprehensiveResearchReport):
+    """Render the full 14-step evidence-grounded research report."""
     console.print("\n")
-    console.print(
-        Panel(
-            f"[bold white]{report.proposal_summary}[/]",
-            title="[bold cyan]Input Research Proposal[/]",
-            border_style="cyan",
+
+    # 1. Proposal Understanding
+    understanding_text = (
+        f"[bold white]Summary:[/] {report.proposal_summary}\n\n"
+        f"[bold cyan]Stored Information:[/] {report.stored_information}\n"
+        f"[bold cyan]Retrieval Trigger:[/] {report.retrieval_trigger}\n"
+        f"[bold cyan]Update Trigger:[/] {report.update_trigger}\n"
+        f"[bold cyan]Intended Benefit:[/] {report.intended_benefit}"
+    )
+    console.print(Panel(understanding_text, title="[bold cyan]1. Proposal Understanding[/]", border_style="cyan"))
+
+    # 2. Resolved Concepts Table
+    c_table = Table(title="2. Resolved Ontological Concepts", border_style="green", show_header=True)
+    c_table.add_column("Proposal Concept", style="bold white", width=26)
+    c_table.add_column("Resolved Entity", style="yellow", width=28)
+    c_table.add_column("Type", style="cyan", width=18)
+    c_table.add_column("Confidence", style="bold green", justify="right", width=12)
+    c_table.add_column("Evidence Grounding", style="dim", width=36)
+
+    for item in report.resolved_concepts:
+        c_table.add_row(
+            item.input_concept,
+            item.resolved_entity_name,
+            item.entity_type,
+            f"{item.confidence * 100:.0f}%",
+            item.evidence,
         )
-    )
+    console.print(c_table)
 
-    # 1. Concept Resolution
-    memtypes = ", ".join(report.resolved_concepts.identified_memory_types)
-    ops = ", ".join(report.resolved_concepts.identified_operations)
-    keywords = ", ".join(report.resolved_concepts.salient_keywords)
-    concept_text = (
-        f"[bold cyan]Memory Paradigms:[/] [yellow]{memtypes}[/]\n"
-        f"[bold cyan]Memory Operations:[/] [green]{ops}[/]\n"
-        f"[bold cyan]Extracted Salient Tokens:[/] {keywords}"
+    # 3. Architectural Fingerprint
+    fp = report.architectural_fingerprint
+    fp_text = (
+        f"Memory Types      : {', '.join(fp.memory_types)}\n"
+        f"Mechanisms        : {', '.join(fp.mechanisms)}\n"
+        f"Operations        : {', '.join(fp.operations)}\n"
+        f"Stored Information: {fp.stored_information}\n"
+        f"Retrieval Pattern : {fp.retrieval_pattern}\n"
+        f"Update Pattern    : {fp.update_pattern}\n"
+        f"Evaluation Tasks  : {', '.join(fp.evaluation_tasks)}"
     )
-    console.print(Panel(concept_text, title="[bold green]1. Resolved Ontological Concepts[/]", border_style="green"))
+    console.print(Panel(fp_text, title="[bold yellow]3. Architectural Fingerprint[/]", border_style="yellow"))
 
-    # 2. Prior Art Table
-    art_table = Table(title="2. Closest Prior Art & Architectural Overlap", border_style="blue", show_header=True)
-    art_table.add_column("Mechanism Name", style="bold white", width=26)
-    art_table.add_column("Proposing Paper", style="cyan", width=34)
+    # 4. Closest Prior Art
+    art_table = Table(title="4. Closest Prior Art (Reproducible Overlap Scoring)", border_style="blue", show_header=True)
+    art_table.add_column("Paper & Mechanism", style="bold white", width=32)
     art_table.add_column("Year", style="dim", width=6)
     art_table.add_column("Overlap", style="bold green", width=9)
-    art_table.add_column("Shared Operations", style="magenta", width=22)
+    art_table.add_column("Why It Matches", style="white", width=35)
+    art_table.add_column("Evidence Excerpt", style="dim", width=42)
 
     for art in report.closest_prior_art:
         art_table.add_row(
-            art.mechanism_name,
-            art.proposing_paper_title[:32] + "...",
-            str(art.paper_year),
+            f"{art.paper_title}\n[cyan]({art.mechanism_name})[/]",
+            str(art.year),
             f"{art.overlap_score * 100:.0f}%",
-            ", ".join(art.shared_operations),
+            art.why_it_matches,
+            f"\"{art.evidence[:85]}...\"" if len(art.evidence) > 85 else f"\"{art.evidence}\"",
         )
     console.print(art_table)
 
-    # 3. Known Failure Modes & Pitfalls (with Verbatim Evidence Quotes)
-    if report.known_pitfalls_and_failure_modes:
-        pitfall_text = ""
-        for p in report.known_pitfalls_and_failure_modes:
-            pitfall_text += (
-                f"[bold red]• {p.limitation_name}[/] (Category: [italic]{p.severity_category}[/])\n"
-                f"  [dim]Exhibited by:[/] {p.exhibited_by_mechanism}\n"
-                f"  [dim]Reported in:[/] [cyan]{p.reported_in_paper}[/] [[bold]{p.evidence_section}[/]]\n"
-                f"  [yellow]\"{p.evidence_excerpt}\"[/]\n\n"
-            )
-        console.print(
-            Panel(
-                pitfall_text.strip(),
-                title="[bold red]3. Historical Pitfalls & Verifiable Failure Modes[/]",
-                border_style="red",
-            )
+    # 5. Historical Failure Modes
+    fail_table = Table(title="5. Historical Failure Modes & Design Implications", border_style="red", show_header=True)
+    fail_table.add_column("Failure Mode", style="bold red", width=22)
+    fail_table.add_column("Affected Architecture", style="cyan", width=24)
+    fail_table.add_column("Why It Affects Proposal", style="white", width=35)
+    fail_table.add_column("Design Implication", style="yellow", width=35)
+    fail_table.add_column("Strength", style="bold magenta", width=12)
+
+    for f in report.historical_failure_modes:
+        fail_table.add_row(
+            f.failure_mode,
+            f.affected_architecture,
+            f.why_it_affects_proposal,
+            f.design_implication,
+            f.evidence_strength,
         )
+    console.print(fail_table)
 
-    # 4. Lineage and Counter-Approaches
-    if report.architectural_lineage:
-        lineage_table = Table(title="4. Architectural Lineage & Evolution Path", border_style="yellow")
-        lineage_table.add_column("Base Mechanism", style="cyan")
-        lineage_table.add_column("Relation", style="bold yellow")
-        lineage_table.add_column("Successor Mechanism", style="green")
-        lineage_table.add_column("Evolution Rationale", style="white")
+    # 6. Historical Lineage
+    lineage_table = Table(title="6. Historical Research Lineage", border_style="yellow")
+    lineage_table.add_column("Source Architecture", style="cyan")
+    lineage_table.add_column("Relationship", style="bold yellow")
+    lineage_table.add_column("Target Architecture", style="green")
+    lineage_table.add_column("Evolutionary Rationale", style="white")
 
-        for step in report.architectural_lineage:
-            lineage_table.add_row(
-                step.earlier_mechanism,
-                step.relationship,
-                step.later_mechanism,
-                step.rationale,
-            )
-        console.print(lineage_table)
-
-    # 5. Recommended Evaluation Benchmarks
-    if report.recommended_benchmarks:
-        bm_table = Table(title="5. Recommended Evaluation Benchmarks & Task Suites", border_style="magenta")
-        bm_table.add_column("Benchmark", style="bold cyan")
-        bm_table.add_column("Target Domain", style="yellow")
-        bm_table.add_column("Standard Evaluation Metrics", style="green")
-        bm_table.add_column("Validation Papers", style="dim")
-
-        for bm in report.recommended_benchmarks:
-            bm_table.add_row(
-                bm.benchmark_name,
-                bm.domain,
-                ", ".join(bm.metrics),
-                ", ".join(bm.used_by_papers[:2]),
-            )
-        console.print(bm_table)
-
-    # 6. Guided 5-Stage Reading Path
-    reading_text = ""
-    for stage in report.guided_reading_path:
-        reading_text += (
-            f"[bold cyan]{stage.stage_name}[/]: [bold white]{stage.paper_title}[/]\n"
-            f"  [dim]Citation:[/] {stage.authors} ({stage.year}) [{stage.paper_id}]\n"
-            f"  [italic green]Pedagogical Goal:[/] {stage.pedagogical_purpose}\n"
-            f"  [bold yellow]Key Takeaway:[/] {stage.key_takeaway}\n\n"
+    for step in report.historical_lineage:
+        lineage_table.add_row(
+            step.source_mechanism,
+            step.relationship,
+            step.target_mechanism,
+            step.transition_rationale,
         )
-    console.print(
-        Panel(
-            reading_text.strip(),
-            title="[bold magenta]6. Guided 5-Stage Pedagogical Reading Path[/]",
-            border_style="magenta",
+    console.print(lineage_table)
+
+    # 7. Benchmark Recommendations
+    bm_table = Table(title="7. Capability-Driven Benchmark Recommendations", border_style="magenta")
+    bm_table.add_column("Benchmark", style="bold cyan", width=18)
+    bm_table.add_column("Task Domain", style="yellow", width=20)
+    bm_table.add_column("Required Capability", style="white", width=32)
+    bm_table.add_column("Metric", style="bold green", width=20)
+    bm_table.add_column("Evidence Citation", style="dim", width=32)
+
+    for bm in report.benchmark_recommendations:
+        bm_table.add_row(
+            bm.benchmark_name,
+            bm.task,
+            bm.required_capability,
+            bm.metric,
+            bm.evidence[:60] + "...",
         )
+    console.print(bm_table)
+
+    # 8. Research Gaps
+    gaps_text = "[bold green]Verified Literature Gaps:[reset]\n"
+    for vg in report.verified_gaps:
+        gaps_text += f"• {vg}\n"
+    gaps_text += "\n[bold yellow]Inferred Gaps:[reset]\n"
+    for ig in report.inferred_gaps:
+        gaps_text += f"• {ig}\n"
+    gaps_text += "\n[dim]Unknown / Insufficient Knowledge-State Coverage:[reset]\n"
+    for ug in report.unknown_evidence:
+        gaps_text += f"• {ug}\n"
+    console.print(Panel(gaps_text.strip(), title="[bold white]8. Research Gaps Analysis[/]", border_style="white"))
+
+    # 9. Novelty / Overlap Assessment
+    novelty_text = (
+        "[bold cyan]Established Prior Art Aspects:[reset]\n"
+        + "\n".join([f"• {x}" for x in report.established_aspects])
+        + "\n\n[bold yellow]Strong Overlap Aspects:[reset]\n"
+        + "\n".join([f"• {x}" for x in report.strong_overlap_aspects])
+        + "\n\n[bold green]Evolutionary Extension Aspects:[reset]\n"
+        + "\n".join([f"• {x}" for x in report.extension_aspects])
+        + "\n\n[bold magenta]Potentially Novel Combination:[reset]\n"
+        + "\n".join([f"• {x}" for x in report.potentially_novel_combinations])
+        + "\n\n[bold red]Unsupported Novelty Claims:[reset]\n"
+        + "\n".join([f"• {x}" for x in report.unsupported_claims])
     )
+    console.print(Panel(novelty_text, title="[bold magenta]9. Research Novelty & Overlap Assessment[/]", border_style="magenta"))
+
+    # 10. Five-Stage Reading Path
+    reading_text = ""
+    for stage in report.five_stage_reading_path:
+        reading_text += (
+            f"[bold cyan]{stage.stage_name}:[/] [bold white]{stage.paper_title}[/]\n"
+            f"  [dim]Authors & Year:[/] {stage.authors} ({stage.year}) [{stage.paper_id}]\n"
+            f"  [yellow]Why Read Now:[/] {stage.why_read_now}\n"
+            f"  [green]What to Learn:[/] {stage.what_to_learn}\n"
+            f"  [dim]Connection to Previous:[/] {stage.connection_to_previous_stage}\n"
+            f"  [bold cyan]Connection to Proposal:[/] {stage.connection_to_proposal}\n\n"
+        )
+    console.print(Panel(reading_text.strip(), title="[bold cyan]10. Five-Stage Pedagogical Reading Path[/]", border_style="cyan"))
+
+    # 11. Evidence Audit
+    audit = report.evidence_audit
+    audit_text = (
+        f"Total Major Claims Evaluated: [bold white]{audit.total_major_claims}[/]\n"
+        f"Explicitly Evidence-Backed  : [bold green]{audit.evidence_backed}[/]\n"
+        f"Inferred (Clearly Labeled)  : [bold yellow]{audit.inferred}[/]\n"
+        f"Unsupported Claims          : [bold red]{audit.unsupported}[/]\n"
+        f"Total Evidence Coverage     : [bold green]{audit.evidence_coverage * 100:.1f}%[/]"
+    )
+    console.print(Panel(audit_text, title="[bold green]11. Evidence Grounding Audit[/]", border_style="green"))
+
+    # 12. Integrity Warnings
+    if report.integrity_warnings:
+        warn_text = "\n".join([f"• {w}" for w in report.integrity_warnings])
+        console.print(Panel(warn_text, title="[bold red]12. Integrity Warnings[/]", border_style="red"))
+    else:
+        console.print(Panel("[bold green]Zero integrity violations detected. All concepts, relations, and benchmarks internally consistent.[/]", title="[bold green]12. Integrity Verification[/]", border_style="green"))
+
     console.print("\n")
 
 def inspect_knowledge_state(engine: ReasoningEngine):

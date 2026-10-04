@@ -1,19 +1,22 @@
-"""Unit tests for the Online Reasoning Engine and Concept Resolver."""
+"""Unit tests for the Online Reasoning Engine and Proposal Decomposer."""
 
 import json
 from pathlib import Path
 from src.models.schema import KnowledgeState
 from src.graph.builder import AgentMemoryGraph
-from src.reasoning.concept_resolver import ConceptResolver
+from src.reasoning.concept_resolver import ProposalDecomposer
 from src.reasoning.engine import ReasoningEngine
 
 def test_concept_resolution_basic():
-    resolver = ConceptResolver()
+    decomposer = ProposalDecomposer()
     query = "I want to design an agent that logs past interaction trajectories into episodic memory and retrieves them."
-    concepts = resolver.resolve(query)
+    decomp = decomposer.decompose(query)
 
-    assert "memtype_episodic" in concepts.identified_memory_types
-    assert "op_store" in concepts.identified_operations or "op_retrieve" in concepts.identified_operations
+    types = [item.resolved_entity_id for item in decomp.resolved_items if item.entity_type == "MemoryType"]
+    ops = [item.resolved_entity_id for item in decomp.resolved_items if item.entity_type == "MemoryOperation"]
+
+    assert "memtype_episodic" in types
+    assert "op_store" in ops or "op_retrieve" in ops
 
 def test_reasoning_engine_produces_structured_report():
     root = Path(__file__).resolve().parent.parent
@@ -32,12 +35,16 @@ def test_reasoning_engine_produces_structured_report():
     top_art = report.closest_prior_art[0]
     assert "paging" in top_art.mechanism_id.lower() or "context" in top_art.mechanism_id.lower()
 
-    # Verify pitfall warnings with evidence
-    assert len(report.known_pitfalls_and_failure_modes) > 0
-    top_pitfall = report.known_pitfalls_and_failure_modes[0]
-    assert len(top_pitfall.evidence_excerpt) > 0
+    # Verify failure modes with evidence
+    assert len(report.historical_failure_modes) > 0
+    top_pitfall = report.historical_failure_modes[0]
+    assert len(top_pitfall.evidence) > 0
 
     # Verify 5-stage reading path
-    assert len(report.guided_reading_path) == 5
-    assert report.guided_reading_path[0].stage_number == 1
-    assert report.guided_reading_path[4].stage_number == 5
+    assert len(report.five_stage_reading_path) == 5
+    assert report.five_stage_reading_path[0].stage_number == 1
+    assert report.five_stage_reading_path[4].stage_number == 5
+
+    # Verify Evidence Audit
+    assert report.evidence_audit.total_major_claims > 0
+    assert report.evidence_audit.evidence_coverage > 0.70
