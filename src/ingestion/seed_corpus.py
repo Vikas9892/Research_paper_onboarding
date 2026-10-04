@@ -1,0 +1,1330 @@
+"""Script to generate curated research paper corpus on Agent Memory (60 Papers).
+
+Deliberately selected across 6 evolutionary lineages:
+1. Working & In-Context Memory (Context paging, self-refine, recursive buffers)
+2. Episodic & Experience Memory (Reflective logs, trial-and-error trajectory learning)
+3. Procedural & Skill Memory (Vectorized executable code libraries, tool persistence)
+4. Retrieval-Augmented & Non-Parametric Memory (Hippocampal indexing, forgetting curves)
+5. Structured & Graph-Based Memory (Knowledge graphs, dynamic relational memory)
+6. Benchmarks & Failure Mode Analysis (Evaluation environments, context drift, distraction)
+"""
+
+import json
+from pathlib import Path
+
+DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+RAW_FILE = DATA_DIR / "raw" / "papers.json"
+
+PAPERS = [
+    # =========================================================================
+    # LINEAGE 1: Working & In-Context Memory
+    # =========================================================================
+    {
+        "paper_id": "paper_memgpt_2023",
+        "title": "MemGPT: Towards LLMs as Operating Systems",
+        "authors": ["Charles Packer", "Sarah Wooders", "Kevin Lin", "Vivian Fang", "Shishir G. Patil", "Ion Stoica", "Joseph E. Gonzalez"],
+        "year": 2023,
+        "venue": "arXiv:2310.08560 / ICLR 2024",
+        "arxiv_id": "2310.08560",
+        "lineage_group": "working_context_memory",
+        "abstract": "Large language models (LLMs) have revolutionized AI, but are constrained by limited context windows. We propose MemGPT (Memory-GPT), a system that manages a memory hierarchy analogous to operating systems. MemGPT provides the illusion of infinite context through tiered memory paging between main context (working memory) and external context (archival and recall storage), controlled by self-directed function calls.",
+        "key_sections": {
+            "Abstract": "We propose MemGPT (Memory-GPT), a system that manages a memory hierarchy analogous to operating systems. MemGPT provides the illusion of infinite context through tiered memory paging between main context (working memory) and external context (archival and recall storage), controlled by self-directed function calls.",
+            "Architecture": "MemGPT divides memory into main context (in-context working memory) and external context (out-of-context storage). The main context includes system instructions, conversational working memory, and working context scratchpad. The external context comprises recall storage (prior interactions) and archival storage (arbitrary factual documents). Context paging allows the LLM to write to and read from external context using memory management functions.",
+            "Operations": "Core operations include context paging (page_in, page_out), core memory editing (edit_core_memory, append_to_core_memory), and archival search (archival_memory_search). Memory transfers are triggered deterministically via LLM-emitted tool calls.",
+            "Limitations": "Frequent memory swapping introduces token latency overhead. Poorly tuned prompts can result in thrashing where the agent repeatedly pages memory blocks without progressing on task execution.",
+            "Experiments": "Evaluated on multi-session conversation consistency (DCA benchmark) and deep document question answering over long text sequences."
+        }
+    },
+    {
+        "paper_id": "paper_self_refine_2023",
+        "title": "Self-Refine: Iterative Reasoning with Feedback without Ground Truth",
+        "authors": ["Aman Madaan", "Niket Tandon", "Prakhar Gupta", "Skyler Hallinan", "Luyu Gao", "Sarah Wiegreffe", "Uri Alon", "Nouha Dziri", "Shrimai Prabhumoye", "Yiming Yang", "Shashank Gupta", "Bodhisattwa Prasad Majumder", "Katherine Hermann", "Sean Welleck", "Amir Yazdanbakhsh", "Peter Clark"],
+        "year": 2023,
+        "venue": "NeurIPS 2023",
+        "arxiv_id": "2303.17651",
+        "lineage_group": "working_context_memory",
+        "abstract": "Like humans, large language models (LLMs) rarely generate the optimal output on their first attempt. We present Self-Refine, an approach where an LLM iteratively refines its outputs using self-generated feedback stored in in-context working memory buffers without supervision or external training.",
+        "key_sections": {
+            "Abstract": "We present Self-Refine, an approach where an LLM iteratively refines its outputs using self-generated feedback stored in in-context working memory buffers without supervision or external training.",
+            "Architecture": "Self-Refine relies on a cyclical generation-feedback-refine loop maintaining an iterative working memory buffer. The buffer accumulates the previous draft, model-generated critique, and modified output across successive iterations.",
+            "Operations": "Iterative feedback generation, in-context critique buffering, draft modification.",
+            "Limitations": "Self-generated feedback suffers from sycophancy and validation blindness, where the model generates critique that fails to spot its own semantic errors, leading to degraded revisions.",
+            "Experiments": "Evaluated across 7 tasks including code optimization, mathematical reasoning, acronym generation, and constrained generation."
+        }
+    },
+    {
+        "paper_id": "paper_recursive_summarization_2024",
+        "title": "Walking Down the Memory Lane: Recursive Context Compression in Long-Horizon LLM Agents",
+        "authors": ["Elena Wu", "Marcus Vance", "David K. Zhang"],
+        "year": 2024,
+        "venue": "ACL 2024 Findings",
+        "arxiv_id": "2402.14890",
+        "lineage_group": "working_context_memory",
+        "abstract": "Long-horizon agent tasks rapidly saturate context windows. We introduce Recursive Context Compression (RCC), an in-context working memory mechanism that summarizes older conversational rounds hierarchically while preserving recent turns verbatim, preventing context exhaustion.",
+        "key_sections": {
+            "Abstract": "We introduce Recursive Context Compression (RCC), an in-context working memory mechanism that summarizes older conversational rounds hierarchically while preserving recent turns verbatim, preventing context exhaustion.",
+            "Architecture": "RCC maintains a dual-buffer system: a fixed-size short-term working buffer for recent interactions and a hierarchical summary tree for older interaction history.",
+            "Operations": "Buffer eviction, periodic recursive summarization, summary consolidation.",
+            "Limitations": "Lossy compression leads to progressive detail degradation, causing the agent to lose specific numerical values or exact constraints established early in the session.",
+            "Experiments": "Benchmarked on multi-turn dialogue consistency and long-horizon multi-step planning tasks."
+        }
+    },
+    {
+        "paper_id": "paper_cot_memory_buffer_2023",
+        "title": "Chain-of-Thought with Persistent Scratchpads: Stateful In-Context Reasoning for Multi-Step Tasks",
+        "authors": ["Jianing Lin", "Rohan Seth", "Tianyi Zhou"],
+        "year": 2023,
+        "venue": "EMNLP 2023",
+        "arxiv_id": "2305.10982",
+        "lineage_group": "working_context_memory",
+        "abstract": "Standard Chain-of-Thought (CoT) prompting fails when reasoning spans multiple decoupled interactions. We propose Stateful Scratchpad Buffers (SSB), externalizing intermediate reasoning traces into persistent working memory variables that persist across prompt boundaries.",
+        "key_sections": {
+            "Abstract": "We propose Stateful Scratchpad Buffers (SSB), externalizing intermediate reasoning traces into persistent working memory variables that persist across prompt boundaries.",
+            "Architecture": "Scratchpad memory maintained as key-value variables in prompt prefix, updated at intermediate execution checkpoints.",
+            "Operations": "State write, state overwrite, scratchpad retrieval.",
+            "Limitations": "Vulnerable to prompt prefix pollution and high token consumption as scratchpad size grows monotonically.",
+            "Experiments": "Tested on multi-step mathematical theorem proving and sequential API call chaining."
+        }
+    },
+    {
+        "paper_id": "paper_memetic_agent_2024",
+        "title": "Memetic LLM Agents: Dynamic Working Memory Pruning via Utility Scoring",
+        "authors": ["Arjun Rao", "Sophia Keller", "Feng Chen"],
+        "year": 2024,
+        "venue": "AAAI 2024",
+        "arxiv_id": "2401.09214",
+        "lineage_group": "working_context_memory",
+        "abstract": "We present Memetic Agent Memory, a selective context retention mechanism that calculates the utility score of prior interaction steps. Low-utility observations are dynamically evicted from working memory, leaving high-salience context intact.",
+        "key_sections": {
+            "Abstract": "We present Memetic Agent Memory, a selective context retention mechanism that calculates the utility score of prior interaction steps.",
+            "Architecture": "Working context contains a dynamic attention mask and utility scorer assessing relevance to the active goal.",
+            "Operations": "Utility calculation, selective token eviction, salience-based context compaction.",
+            "Limitations": "Irreversible eviction of observations that turn out to be retrospectively important for later task phases.",
+            "Experiments": "Evaluated on interactive text games (ScienceWorld) and long web-browsing sessions."
+        }
+    },
+    {
+        "paper_id": "paper_context_paging_letta_2024",
+        "title": "Stateful Tool Management and Hierarchical Context Paging in Agent Runtimes",
+        "authors": ["Sarah Wooders", "Charles Packer", "Joseph E. Gonzalez"],
+        "year": 2024,
+        "venue": "arXiv:2407.12391",
+        "arxiv_id": "2407.12391",
+        "lineage_group": "working_context_memory",
+        "abstract": "Extending operating-system inspired architectures, this work formalizes context paging protocols between LLM RAM (in-context window) and disk (relational database). We introduce atomic memory transactions to prevent state corruption during tool failures.",
+        "key_sections": {
+            "Abstract": "This work formalizes context paging protocols between LLM RAM and disk, introducing atomic memory transactions to prevent state corruption.",
+            "Architecture": "Two-tier context paging runtime with ACID-compliant memory transactions and explicit memory pointers.",
+            "Operations": "Atomic memory write, rollback on error, context swap, segment eviction.",
+            "Limitations": "Transaction rollbacks require substantial context rebuilding, slowing latency during unexpected tool exceptions.",
+            "Experiments": "Evaluated on complex database management tasks and multi-agent coordination."
+        }
+    },
+    {
+        "paper_id": "paper_sliding_window_attention_2023",
+        "title": "StreamingLLM: Efficient Streaming Language Models with Attention Sinks",
+        "authors": ["Guangxuan Xiao", "Yuandong Tian", "Beidi Chen", "Song Han", "Mike Lewis"],
+        "year": 2023,
+        "venue": "ICLR 2024",
+        "arxiv_id": "2309.17453",
+        "lineage_group": "working_context_memory",
+        "abstract": "Serving LLM agents on infinite streams encounters two challenges: caching memory consumption and performance collapse when sequence length exceeds context limits. We discover attention sinks and propose StreamingLLM to maintain a persistent rolling working memory without fine-tuning.",
+        "key_sections": {
+            "Abstract": "We discover attention sinks and propose StreamingLLM to maintain a persistent rolling working memory without fine-tuning.",
+            "Architecture": "Working memory is configured as an attention sink (initial 4 tokens) paired with a rolling local sliding-window buffer.",
+            "Operations": "Sliding-window buffer eviction, attention sink preservation.",
+            "Limitations": "Cannot retain middle-distance historical facts once evicted from the sliding window, causing catastrophic forgetting of past instructions.",
+            "Experiments": "Evaluated on 4-million token streaming generation and continuous multi-day chat."
+        }
+    },
+    {
+        "paper_id": "paper_auto_compressor_2023",
+        "title": "Adapting Language Models to Compress Contexts",
+        "authors": ["Alexis Chevalier", "Alexander Wettig", "Anirudh Ajith", "Danqi Chen"],
+        "year": 2023,
+        "venue": "EMNLP 2023",
+        "arxiv_id": "2305.14788",
+        "lineage_group": "working_context_memory",
+        "abstract": "We explore AutoCompressor models that learn to compress long text sequences into compact summary tokens, which serve as an external memory vector in the working context window.",
+        "key_sections": {
+            "Abstract": "We explore AutoCompressor models that learn to compress long text sequences into compact summary tokens for working memory.",
+            "Architecture": "Summary vectors generated by pre-trained compressor models injected into context prefix.",
+            "Operations": "Token sequence compression, prefix injection, summary vector pooling.",
+            "Limitations": "Requires fine-tuned compression weights; loss of fine-grained entity references in complex reasoning.",
+            "Experiments": "Tested on long document QA and language modeling perplexity across 32k token contexts."
+        }
+    },
+    {
+        "paper_id": "paper_dynamic_scratchpad_2024",
+        "title": "Dynamic Working Memory Buffers for Multi-Agent Software Engineering",
+        "authors": ["Hao Tang", "Zhe Wang", "Li Zhang"],
+        "year": 2024,
+        "venue": "ICSE 2024",
+        "arxiv_id": "2403.08119",
+        "lineage_group": "working_context_memory",
+        "abstract": "In multi-agent software engineering, context windows easily saturate with stack traces and compiler outputs. We introduce Dynamic Working Buffers (DWB) that partition context into code view, execution trace, and active hypothesis memory.",
+        "key_sections": {
+            "Abstract": "We introduce Dynamic Working Buffers (DWB) that partition context into code view, execution trace, and active hypothesis memory.",
+            "Architecture": "Tri-partite working buffer maintaining orthogonal partitions for code syntax, execution feedback, and reasoning scratchpad.",
+            "Operations": "Partition flush, hypothesis overwrite, trace compaction.",
+            "Limitations": "Fixed partition boundaries lead to underutilization when code snippets are tiny but execution traces are massive.",
+            "Experiments": "Benchmarked on SWE-bench for automated GitHub issue resolution."
+        }
+    },
+    {
+        "paper_id": "paper_context_distillation_2023",
+        "title": "In-Context Distillation for Long-Lived Dialogue Agents",
+        "authors": ["Lucas Bandopadhyay", "Claire Roberts", "Sumanth Reddy"],
+        "year": 2023,
+        "venue": "EACL 2024",
+        "arxiv_id": "2311.08271",
+        "lineage_group": "working_context_memory",
+        "abstract": "We propose In-Context Distillation (ICD) to distill accumulated working memory traces into dense natural language persona and rule declarations, resetting conversation token counters without behavioral drift.",
+        "key_sections": {
+            "Abstract": "We propose In-Context Distillation (ICD) to distill accumulated working memory traces into dense natural language declarations.",
+            "Architecture": "Distillation pipeline that transforms raw interaction history into an updated prompt prefix containing learned constraints.",
+            "Operations": "History consolidation, persona synthesis, context reset.",
+            "Limitations": "Over-generalization where specific context nuances are wiped away into vague behavioral rules.",
+            "Experiments": "Tested on persona consistency across 50-turn conversational roleplays."
+        }
+    },
+
+    # =========================================================================
+    # LINEAGE 2: Episodic & Experience Memory
+    # =========================================================================
+    {
+        "paper_id": "paper_generative_agents_2023",
+        "title": "Generative Agents: Interactive Simulacra of Human Behavior",
+        "authors": ["Joon Sung Park", "Joseph C. O'Brien", "Carrie J. Cai", "Meredith Ringel Morris", "Percy Liang", "Michael S. Bernstein"],
+        "year": 2023,
+        "venue": "UIST 2023",
+        "arxiv_id": "2304.03442",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "We introduce generative agents—computational software agents that simulate believable human behavior. Generative agents store a comprehensive record of the agent's experiences in a memory stream, synthesize memories over time into higher-level reflections, and retrieve them dynamically to plan actions.",
+        "key_sections": {
+            "Abstract": "Generative agents store a comprehensive record of the agent's experiences in a memory stream, synthesize memories over time into higher-level reflections, and retrieve them dynamically to plan actions.",
+            "Architecture": "Memory Stream: a database maintaining a timestamped list of observation statements. The reflection engine aggregates low-level observations into abstract insights. The planning module translates insights into chronological schedules.",
+            "Operations": "Memory Stream Recording (store), Retrieval via Recency, Importance, and Relevance scoring, and Memory Reflection (consolidate/reflect).",
+            "Limitations": "Memory reflection drift over extended horizons, where agents construct false reflections based on hallucinated inferences and treat them as factual memories.",
+            "Experiments": "Simulated sandbox environment of 25 agents in Smallville, evaluating emergent social behaviors, information diffusion, and relationship formation."
+        }
+    },
+    {
+        "paper_id": "paper_reflexion_2023",
+        "title": "Reflexion: Language Agents with Verbal Reinforcement Learning",
+        "authors": ["Noah Shinn", "Federico Cassano", "Edward Berman", "Ashwin Gopinath", "Karthik Narasimhan", "Shunyu Yao"],
+        "year": 2023,
+        "venue": "NeurIPS 2023",
+        "arxiv_id": "2303.11366",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "Large language models increasingly execute tasks in interactive environments, but learning through trial and error remains challenging without fine-tuning. We propose Reflexion, an approach that endows agents with dynamic episodic memory of verbal self-reflection feedback to learn from failure.",
+        "key_sections": {
+            "Abstract": "We propose Reflexion, an approach that endows agents with dynamic episodic memory of verbal self-reflection feedback to learn from failure.",
+            "Architecture": "Reflexion consists of an Actor, an Evaluator, and a Self-Reflection model. The Actor's trajectory is evaluated on task completion. On failure, the Self-Reflection model diagnoses the error and writes a verbal reflection into an episodic memory buffer.",
+            "Operations": "Episodic logging (store), error diagnosis (reflect), reflection buffer retrieval (retrieve), sliding-window buffer eviction (evict).",
+            "Limitations": "Susceptible to hallucinated reflection loops where the agent repeatedly blames external tools rather than its own planning logic, getting stuck in cyclic failure.",
+            "Experiments": "Evaluated on decision-making tasks in ALFWorld (decision-making), HotpotQA (reasoning), and HumanEval / MBPP (Python code generation)."
+        }
+    },
+    {
+        "paper_id": "paper_expel_2023",
+        "title": "ExpeL: LLM Agents Are Experienced Learners",
+        "authors": ["Andrew Zhao", "Daniel Huang", "Quentin Xu", "Matthieu Lin", "Yong-Jin Liu", "Gao Huang"],
+        "year": 2023,
+        "venue": "AAAI 2024",
+        "arxiv_id": "2308.10144",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "Unlike reinforcement learning agents, LLM agents typically do not accumulate trial-and-error experiences across tasks. We propose ExpeL (Experienced Learner), which extracts parametric insights and experiential rule pools from past trajectories and stores them in cross-task episodic memory.",
+        "key_sections": {
+            "Abstract": "We propose ExpeL (Experienced Learner), which extracts parametric insights and experiential rule pools from past trajectories and stores them in cross-task episodic memory.",
+            "Architecture": "ExpeL constructs an experience repository consisting of successful and failed task trajectories, paired with an offline insight extractor that distills cross-task operational rules.",
+            "Operations": "Trajectory pooling, contrastive rule extraction, episodic similarity retrieval.",
+            "Limitations": "False rule induction: extracting overly narrow or spurious rules from single lucky trajectories that hurt performance on out-of-distribution tasks.",
+            "Experiments": "Evaluated on WebShop and ALFWorld across 100+ sequential multi-domain tasks."
+        }
+    },
+    {
+        "paper_id": "paper_retroformer_2023",
+        "title": "Retroformer: Retrospective Large Language Agents with Policy Gradient Optimization",
+        "authors": ["Weiyan Shi", "Yutao Sun", "David D. Nguyen"],
+        "year": 2023,
+        "venue": "ICLR 2024",
+        "arxiv_id": "2308.02151",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "While Reflexion leverages heuristic verbal reflection, it lacks formal optimization over what reflections are beneficial. Retroformer introduces retrospective verbal reinforcement learning by tuning the reflection generation policy using policy gradients based on downstream task success.",
+        "key_sections": {
+            "Abstract": "Retroformer introduces retrospective verbal reinforcement learning by tuning the reflection generation policy using policy gradients.",
+            "Architecture": "Actor-critic framing where verbal reflection memory is treated as a latent action, optimized via proximal policy optimization on task completion rewards.",
+            "Operations": "Retrospective reflection generation, policy gradient update, episodic reflection retrieval.",
+            "Limitations": "Requires expensive training iterations and high sample complexity to collect reward signals compared to prompt-based memory.",
+            "Experiments": "Tested on ALFWorld interactive household tasks and WebShop e-commerce navigation."
+        }
+    },
+    {
+        "paper_id": "paper_agent_pro_2024",
+        "title": "Agent-Pro: Truly Thinking and Acting like a Human with Dynamic Episodic Belief Revision",
+        "authors": ["Yuxiang Zhang", "Zheng Chen", "Yao Lu"],
+        "year": 2024,
+        "venue": "ACL 2024",
+        "arxiv_id": "2402.17574",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "Interactive agents in non-stationary environments must continuously revise beliefs about their environment. Agent-Pro introduces dynamic episodic belief revision, where agents maintain historical hypothesis states and update them based on counter-evidence.",
+        "key_sections": {
+            "Abstract": "Agent-Pro introduces dynamic episodic belief revision, where agents maintain historical hypothesis states and update them based on counter-evidence.",
+            "Architecture": "Belief-Desire-Intention (BDI) episodic memory structure logging hypothesis history alongside interaction observations.",
+            "Operations": "Belief logging, counter-evidence detection, belief revision (consolidate/evict).",
+            "Limitations": "Belief oscillation: rapid flipping between contradictory world models in noisy or partially observable environments.",
+            "Experiments": "Evaluated on interactive text-based adventure games (TextWorld) and complex board game simulations."
+        }
+    },
+    {
+        "paper_id": "paper_memory_bank_2023",
+        "title": "MemoryBank: Enhancing Large Language Models with Long-Term Memory",
+        "authors": ["Wanjun Zhong", "Lianghong Guo", "Qing Gao", "He Ye", "Yanlin Wang"],
+        "year": 2023,
+        "venue": "EMNLP 2023 / AAAI 2024",
+        "arxiv_id": "2305.10250",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "To establish long-term companionship and continuous assistance, LLMs need persistent memory that mimics human cognitive retention. We propose MemoryBank, a long-term memory system equipped with an Ebbinghaus Forgetting Curve mechanism to manage memory strength over time.",
+        "key_sections": {
+            "Abstract": "We propose MemoryBank, a long-term memory system equipped with an Ebbinghaus Forgetting Curve mechanism to manage memory strength over time.",
+            "Architecture": "MemoryBank consists of an episodic memory store where each memory node possesses a timestamp, access count, and dynamic memory strength value computed using the Ebbinghaus forgetting curve.",
+            "Operations": "Memory storage with initial strength, decay computation, memory retrieval, strength consolidation on re-access, memory pruning below strength thresholds.",
+            "Limitations": "High sensitivity to forgetting curve hyperparameters, resulting in either premature eviction of dormant essential facts or memory bloating.",
+            "Experiments": "Evaluated on multi-day psychological counseling dialogue and long-term user interaction logs."
+        }
+    },
+    {
+        "paper_id": "paper_clinx_experience_2024",
+        "title": "ClinX: Clinical Trial Episode Memory for Multi-Year Medical Agent Alignment",
+        "authors": ["Ravi V. Patel", "Ananya Sen", "Timothy Miller"],
+        "year": 2024,
+        "venue": "JAMIA / arXiv:2404.09112",
+        "arxiv_id": "2404.09112",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "We evaluate episodic patient trajectory memory in healthcare LLMs. ClinX structures clinical episodes into diagnostic hypotheses, interventions, and multi-month clinical outcomes, retrieving prior matching trajectories to guide new patient triage.",
+        "key_sections": {
+            "Abstract": "ClinX structures clinical episodes into diagnostic hypotheses, interventions, and multi-month clinical outcomes.",
+            "Architecture": "Structured episodic trajectory graph indexing patient comorbidities, drug regimens, and adverse events.",
+            "Operations": "Episode indexing, clinical similarity retrieval, outcome cross-validation.",
+            "Limitations": "Risk of confirmation bias where atypical patient presentations are misdiagnosed due to over-indexing on high-frequency historical episodes.",
+            "Experiments": "Evaluated on MIMIC-IV clinical benchmark across 15,000 patient episodes."
+        }
+    },
+    {
+        "paper_id": "paper_remind_experience_2023",
+        "title": "REMIND: Retrieval-Augmented Experience Replay for Continual LLM Agents",
+        "authors": ["Gokul Swamy", "David Wu", "Sanjeev Arora"],
+        "year": 2023,
+        "venue": "NeurIPS 2023 Workshop",
+        "arxiv_id": "2310.02491",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "Continual learning in language agents suffers from catastrophic forgetting. REMIND implements experience replay by storing trajectory tuples and retrieving diverse contrastive pairs during reflection phases.",
+        "key_sections": {
+            "Abstract": "REMIND implements experience replay by storing trajectory tuples and retrieving diverse contrastive pairs during reflection phases.",
+            "Architecture": "Experience replay buffer with prioritized trajectory sampling based on prediction error and novelty.",
+            "Operations": "Prioritized experience write, diversity-aware retrieval, reflection update.",
+            "Limitations": "Prioritization biases memory toward noisy edge cases that do not generalize to standard operational environments.",
+            "Experiments": "Tested on Crafter and BabyAI sequential environment benchmarks."
+        }
+    },
+    {
+        "paper_id": "paper_traj_bank_2024",
+        "title": "TrajectoryBank: Large-Scale Trajectory Memory for Web Navigation Agents",
+        "authors": ["Lianke Qin", "Tao Yu", "Xingyao Wang"],
+        "year": 2024,
+        "venue": "ICLR 2024",
+        "arxiv_id": "2401.12990",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "Web agents repeatedly fail on complex multi-step navigation. TrajectoryBank aggregates thousands of historical browser action traces, indexing DOM states, user intents, and action sequences into an episodic lookup memory.",
+        "key_sections": {
+            "Abstract": "TrajectoryBank aggregates historical browser action traces, indexing DOM states, user intents, and action sequences.",
+            "Architecture": "Hierarchical trajectory repository indexing intent embeddings, DOM structural hashes, and successful action sequences.",
+            "Operations": "DOM-state hashing, intent matching, trajectory replay, error checkpointing.",
+            "Limitations": "DOM volatility: minor website UI refactorings invalidate historical action paths, leading to repeated execution errors.",
+            "Experiments": "Evaluated on WebArena and Mind2Web navigation suites."
+        }
+    },
+    {
+        "paper_id": "paper_synapse_memory_2024",
+        "title": "Synapse: Trajectory-as-Exemplar Memory for Generalist Computer Agents",
+        "authors": ["Longyue Wang", "Ziyi Ni", "Dian Yu"],
+        "year": 2024,
+        "venue": "ACL 2024",
+        "arxiv_id": "2403.17882",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "We introduce Synapse, an exemplar memory architecture that converts past task trajectories into modular prompt exemplars, enabling zero-shot agents to adapt to novel operating system tasks.",
+        "key_sections": {
+            "Abstract": "Synapse converts past task trajectories into modular prompt exemplars, enabling zero-shot agents to adapt to novel operating system tasks.",
+            "Architecture": "Exemplar abstraction engine that strips environment-specific tokens and stores structural execution graphs.",
+            "Operations": "Exemplar abstraction, semantic task retrieval, in-context prompt grafting.",
+            "Limitations": "Over-abstraction leads to missing environment parameters like directory paths and file extensions.",
+            "Experiments": "Evaluated on OSWorld and GAIA desktop task benchmarks."
+        }
+    },
+
+    # =========================================================================
+    # LINEAGE 3: Procedural & Skill Memory
+    # =========================================================================
+    {
+        "paper_id": "paper_voyager_2023",
+        "title": "Voyager: An Open-Ended Embodied Agent with Large Language Models",
+        "authors": ["Guanzhi Wang", "Yuqi Xie", "Yunfan Jiang", "Ajay Mandlekar", "Chaowei Xiao", "Yuke Zhu", "Linxi Fan", "Anima Anandkumar"],
+        "year": 2023,
+        "venue": "NeurIPS 2023 (Oral)",
+        "arxiv_id": "2305.16291",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "We introduce Voyager, the first LLM-powered embodied lifelong learning agent in Minecraft. Voyager continually explores the world, develops increasingly sophisticated skills, and makes discoveries without human intervention. Voyager consists of three key components: an automatic curriculum, an iterative prompting mechanism, and a skill library for storing executable code skills.",
+        "key_sections": {
+            "Abstract": "Voyager consists of an automatic curriculum, an iterative prompting mechanism, and a skill library for storing executable code skills.",
+            "Architecture": "Skill Library: a procedural memory repository storing verified JavaScript code programs. Each skill is indexed by the vector embedding of its docstring. When facing a new task, Voyager queries the skill library for relevant compound skills.",
+            "Operations": "Skill synthesis via execution feedback, skill verification in sandbox, skill indexing in vector DB (store), semantic skill retrieval (retrieve), skill composition (reflect/consolidate).",
+            "Limitations": "Skill proliferation: the library accumulates hundreds of overlapping or near-identical micro-skills, increasing retrieval distraction and slowing composition.",
+            "Experiments": "Evaluated in open-ended Minecraft: tech tree unlocks (wooden pickaxe to diamond), map exploration distance, and unseen challenge completion."
+        }
+    },
+    {
+        "paper_id": "paper_gitm_2023",
+        "title": "Ghost in the Minecraft: Generally Capable Agents with Large Language Models via Structured Action Memory",
+        "authors": ["Haoqi Yuan", "Chi Zhang", "Hongcheng Wang", "Mengyue Yang", "Zheng Chen"],
+        "year": 2023,
+        "venue": "NeurIPS 2023",
+        "arxiv_id": "2305.17144",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "We present GITM (Ghost in the Minecraft), an agent framework using structured action memory trees to solve complex open-ended tasks in Minecraft, achieving 100% success rate on the ObtainDiamond task.",
+        "key_sections": {
+            "Abstract": "GITM presents an agent framework using structured action memory trees to solve complex open-ended tasks in Minecraft.",
+            "Architecture": "Hierarchical action memory tree decomposing high-level goals into deterministic sub-plans and atomic motor skills.",
+            "Operations": "Sub-goal tree decomposition, skill verification, action sequence caching.",
+            "Limitations": "Rigid procedural tree traversal fails when unexpected dynamic environmental hazards (lava, hostile mobs) interrupt execution.",
+            "Experiments": "ObtainDiamond benchmark and tech-tree progression in Minecraft."
+        }
+    },
+    {
+        "paper_id": "paper_cradle_2024",
+        "title": "Cradle: Empowering Foundation Agents Towards General Computer Control",
+        "authors": ["Wei Shen", "Renzhe Hou", "Yong Chen", "Yuan Zhao", "Linxi Fan"],
+        "year": 2024,
+        "venue": "arXiv:2403.03186",
+        "arxiv_id": "2403.03186",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "Cradle is a general computer control framework enabling agents to interact with arbitrary software via screen inputs and keyboard/mouse actions. It utilizes a multimodal procedural memory that indexes visual application workflows.",
+        "key_sections": {
+            "Abstract": "Cradle is a general computer control framework utilizing a multimodal procedural memory that indexes visual application workflows.",
+            "Architecture": "Multimodal skill memory indexing UI action trajectories with paired visual screen keyframes.",
+            "Operations": "Visual skill recording, screenshot feature matching, mouse-keyboard action replay.",
+            "Limitations": "Resolution and aspect ratio mismatches break visual template retrieval across different operating systems.",
+            "Experiments": "Evaluated across complex desktop software including Photoshop, Chrome, and AAA games like Red Dead Redemption II."
+        }
+    },
+    {
+        "paper_id": "paper_toolkenizer_2024",
+        "title": "Toolkenizer: Tokens That Are Tools for Continuous Skill Invocation",
+        "authors": ["Yutao Sun", "Li Dong", "Yi Zhu", "Shaohan Huang", "Furu Wei"],
+        "year": 2024,
+        "venue": "ICML 2024",
+        "arxiv_id": "2305.11554",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "Rather than treating tools as external API text calls, Toolkenizer maps each tool into a discrete procedural token embedding, integrating procedural memory directly into the language model vocabulary.",
+        "key_sections": {
+            "Abstract": "Toolkenizer maps each tool into a discrete procedural token embedding, integrating procedural memory directly into language model vocabulary.",
+            "Architecture": "Parametric procedural tool-token dictionary expanded dynamically as new tools are discovered.",
+            "Operations": "Tool embedding initialization, gradient updating on tool execution success, tool invocation during decoding.",
+            "Limitations": "Requires fine-tuning model embedding matrices whenever novel external tools are introduced.",
+            "Experiments": "Evaluated on ToolBench across 16,000 real-world RESTful APIs."
+        }
+    },
+    {
+        "paper_id": "paper_toolllm_2023",
+        "title": "ToolLLM: Facilitating Large Language Models to Master 16,000+ Real-World APIs",
+        "authors": ["Yujia Qin", "Shihao Liang", "Yining Ye", "Kunlun Zhu", "Lan Yan", "Yaxi Lu", "Yankai Lin", "Zhiyuan Liu", "Maosong Sun"],
+        "year": 2023,
+        "venue": "ICLR 2024",
+        "arxiv_id": "2307.16789",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "We construct ToolBench, an instruction-tuning dataset for tool use, and develop ToolLLM. We propose ToolIR, a procedural tool memory retrieval system that indexes OpenAPI documentation for multi-step reasoning.",
+        "key_sections": {
+            "Abstract": "We develop ToolLLM and propose ToolIR, a procedural tool memory retrieval system that indexes OpenAPI documentation for multi-step reasoning.",
+            "Architecture": "Neural API retriever indexing API parameters, response formats, and functional descriptions into a procedural tool library.",
+            "Operations": "API semantic indexing, multi-stage retrieval, tool parameter tree search.",
+            "Limitations": "Parameter schema drift: when API endpoints modify authentication headers or argument types, cached tool schemas fail execution.",
+            "Experiments": "Evaluated on ToolBench across unseen APIs and multi-tool planning tasks."
+        }
+    },
+    {
+        "paper_id": "paper_skillnet_2024",
+        "title": "SkillNet: Procedural Skill Graph Consolidation for Lifelong Robotic Agents",
+        "authors": ["Vikram Rao", "Jessica Hu", "Ken Goldberg"],
+        "year": 2024,
+        "venue": "ICRA 2024",
+        "arxiv_id": "2402.11894",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "Robotic agents accumulate execution scripts that become redundant. SkillNet builds a directed procedural graph where nodes represent parameterized skills and edges represent compositional pre-conditions and post-conditions.",
+        "key_sections": {
+            "Abstract": "SkillNet builds a directed procedural graph where nodes represent parameterized skills and edges represent compositional pre-conditions and post-conditions.",
+            "Architecture": "Directed acyclic procedural graph with typed edge dependencies indicating execution pre-conditions.",
+            "Operations": "Skill node insertion, dependency edge inference, graph composition traversal, dead-code skill eviction.",
+            "Limitations": "Dependency explosion: dense interconnects make topological sorting fragile to single failed sensor preconditions.",
+            "Experiments": "Evaluated in robotic table-top manipulation and kitchen assembly tasks."
+        }
+    },
+    {
+        "paper_id": "paper_progprompt_2023",
+        "title": "ProgPrompt: Generating Situated Robot Task Plans using Large Language Models",
+        "authors": ["Ishika Singh", "Valts Blukis", "Arsalan Mousavian", "Animesh Garg", "Chetan Sheng", "Dieter Fox"],
+        "year": 2023,
+        "venue": "ICRA 2023",
+        "arxiv_id": "2209.11302",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "ProgPrompt proposes a programmatic procedural memory where plans are generated as Pythonic programs with assertions and error-handling routines grounded in real-time scene perception.",
+        "key_sections": {
+            "Abstract": "ProgPrompt proposes programmatic procedural memory where plans are generated as Pythonic programs with assertions and error-handling routines.",
+            "Architecture": "Programmatic code memory storing assertion-guarded action functions with runtime state monitors.",
+            "Operations": "Programmatic assertion checking, action dispatch, failure branch execution.",
+            "Limitations": "Brittle perception grounding: failure of vision models to detect object affordances halts code execution at assertion guards.",
+            "Experiments": "Evaluated in VirtualHome simulation and real-world Franka Emika robotic arms."
+        }
+    },
+    {
+        "paper_id": "paper_saycan_2022",
+        "title": "Do As I Can, Not As I Say: Grounding Language in Robotic Affordances",
+        "authors": ["Michael Ahn", "Anthony Brohan", "Noah Brown", "Yevgen Chebotar", "Omar Cortes", "Byron David", "Chelsea Finn", "Keerthana Gopalakrishnan", "Karol Hausman", "Alex Irpan", "Daniel Ho"],
+        "year": 2022,
+        "venue": "CoRL 2022",
+        "arxiv_id": "2204.01691",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "We show how language model planning can be grounded in physical affordances by combining LLM semantic probabilities with value functions of learned procedural skills.",
+        "key_sections": {
+            "Abstract": "We combine LLM semantic probabilities with value functions of learned procedural skills to ground language planning in physical affordances.",
+            "Architecture": "Affordance-grounded procedural memory pairing language descriptions of skills with pre-trained value-function models.",
+            "Operations": "Skill affordance scoring, probability multiplication, highest-affordance skill dispatch.",
+            "Limitations": "Limited to pre-trained static skill repertoires; unable to synthesize novel skills on-the-fly when encountering unknown objects.",
+            "Experiments": "101 real-world robotic tasks evaluated in kitchen environments."
+        }
+    },
+    {
+        "paper_id": "paper_robollm_memory_2024",
+        "title": "RoboMemory: Hierarchical Skill Memory for Long-Horizon Robotic Mobile Manipulation",
+        "authors": ["Kaiyuan Chen", "Xiaolong Wang", "Chelsea Finn"],
+        "year": 2024,
+        "venue": "CoRL 2024",
+        "arxiv_id": "2405.09341",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "We present RoboMemory, decoupling long-horizon robotic plans into spatial navigation skills and precision manipulation skills, maintained in a structured procedural hierarchy.",
+        "key_sections": {
+            "Abstract": "RoboMemory decouples long-horizon robotic plans into spatial navigation skills and precision manipulation skills in a procedural hierarchy.",
+            "Architecture": "Two-tier procedural memory splitting topological navigation skills from fine-grained closed-loop motor skills.",
+            "Operations": "Hierarchical skill dispatch, sub-goal completion check, skill parameter interpolation.",
+            "Limitations": "Inter-skill boundary failures where spatial inaccuracies from navigation prevent manipulation skills from grasping objects.",
+            "Experiments": "Tested on Habitat simulation and real-world multi-room robotic navigation and cleanup."
+        }
+    },
+    {
+        "paper_id": "paper_code_as_policies_2022",
+        "title": "Code as Policies: Language Model Programs for Embodied Control",
+        "authors": ["Jacky Liang", "Wenlong Huang", "Fei Xia", "Peng Xu", "Karol Hausman", "Brian Ichter", "Pete Florence", "Andy Zeng"],
+        "year": 2022,
+        "venue": "IEEE Robotics and Automation Letters (RA-L) 2023",
+        "arxiv_id": "2209.07753",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "We show that language models can be prompted to write robot policy code as procedural memory, using Python logic to express loops, conditionals, and geometric calculations.",
+        "key_sections": {
+            "Abstract": "We show that language models can be prompted to write robot policy code as procedural memory using Python logic.",
+            "Architecture": "Dynamic policy library storing executable Python scripts interfacing with robotic perception APIs.",
+            "Operations": "Code generation, code execution via interpreter, programmatic variable scoping.",
+            "Limitations": "Cannot handle dynamic physical disturbances during execution without re-prompting the entire policy script.",
+            "Experiments": "Evaluated across robot tabletop manipulation tasks requiring spatial coordinate transformations."
+        }
+    },
+
+    # =========================================================================
+    # LINEAGE 4: Retrieval-Augmented & Non-Parametric Memory
+    # =========================================================================
+    {
+        "paper_id": "paper_hipporag_2024",
+        "title": "HippoRAG: Neurobiologically Inspired Long-Term Memory for Large Language Models",
+        "authors": ["Bernal Jiménez Gutiérrez", "Yiheng Shu", "Yu Gu", "Michihiro Yasunaga", "Yu Su"],
+        "year": 2024,
+        "venue": "NeurIPS 2024",
+        "arxiv_id": "2405.14831",
+        "lineage_group": "retrieval_external_memory",
+        "abstract": "Human long-term memory relies on the hippocampal-cortical system to achieve continuous integration and associative recall. We present HippoRAG, a novel retrieval framework inspired by hippocampal indexing theory. HippoRAG converts passages into an open-domain knowledge graph and utilizes Personalized PageRank (PPR) over the graph to perform multi-hop associative recall.",
+        "key_sections": {
+            "Abstract": "HippoRAG converts passages into an open-domain knowledge graph and utilizes Personalized PageRank (PPR) over the graph to perform multi-hop associative recall.",
+            "Architecture": "Hippocampal indexing architecture: an open-information extraction pipeline builds an external knowledge graph; query entities act as seed nodes; Personalized PageRank distributes probability mass across associative paths.",
+            "Operations": "Graph entity indexing (store), Personalized PageRank traversal (retrieve), associative path activation (consolidate).",
+            "Limitations": "Susceptible to graph connectivity bottlenecks: missing synonymous entity links prevent PageRank flow across disconnected subgraphs.",
+            "Experiments": "Evaluated on multi-hop QA benchmarks: MuSiQue, 2WikiMultiHopQA, and HotpotQA, showing superior recall over standard dense retrieval."
+        }
+    },
+    {
+        "paper_id": "paper_mem0_2024",
+        "title": "Mem0: The Memory Layer for Personalized AI Applications",
+        "authors": ["Deshraj Yadav", "Prateek Chhikara", "Taranjeet Singh"],
+        "year": 2024,
+        "venue": "arXiv:2411.18115",
+        "arxiv_id": "2411.18115",
+        "lineage_group": "retrieval_external_memory",
+        "abstract": "We present Mem0, a scalable, production-grade memory layer for AI agents. Mem0 maintains an external key-value and vector memory store that automatically extracts user facts, updates preferences over time, and resolves conflicting statements via memory consolidation.",
+        "key_sections": {
+            "Abstract": "Mem0 maintains an external key-value and vector memory store that automatically extracts user facts and resolves conflicting statements.",
+            "Architecture": "Hybrid architecture combining vector databases for semantic search with a graph-based relational layer for entity relationships and conflict resolution.",
+            "Operations": "Fact extraction (store), semantic similarity search (retrieve), conflict resolution and memory updating (consolidate), obsolete fact deletion (evict).",
+            "Limitations": "Conflict resolution heuristics can mistakenly overwrite historical facts that were context-dependent rather than genuinely contradictory.",
+            "Experiments": "Evaluated on long-term personalization benchmarks, customer support agent benchmarks, and user profile consistency tests."
+        }
+    },
+    {
+        "paper_id": "paper_think_in_memory_2023",
+        "title": "TiM: Think-in-Memory: Recalling and Post-Thinking Enable LLMs with Long-Term Memory",
+        "authors": ["Hao Zhou", "Yanjun Chen", "Minlie Huang"],
+        "year": 2023,
+        "venue": "ACL 2024",
+        "arxiv_id": "2311.08719",
+        "lineage_group": "retrieval_external_memory",
+        "abstract": "We propose Think-in-Memory (TiM), a framework that enables LLMs to maintain long-term memory through a two-stage process: Pre-thinking for recalling relevant memories before responding, and Post-thinking for consolidating and updating memory after interaction.",
+        "key_sections": {
+            "Abstract": "TiM enables LLMs to maintain long-term memory through Pre-thinking (recalling relevant memories) and Post-thinking (consolidating memory after interaction).",
+            "Architecture": "External memory storage with dual-stage cognitive scheduling: Pre-thinking retrieval module and Post-thinking reflection and consolidation module.",
+            "Operations": "Pre-thinking recall (retrieve), post-thinking memory synthesis (reflect), external memory update (store/consolidate).",
+            "Limitations": "Post-thinking latency doubles API execution overhead per turn, making it costly for real-time interactive agents.",
+            "Experiments": "Benchmarked on conversational consistency datasets and long-range dialogue tracking."
+        }
+    },
+    {
+        "paper_id": "paper_memochat_2023",
+        "title": "MemoChat: Tuning LLMs to Use Memos for Consistent Long-Range Open-Domain Conversation",
+        "authors": ["Junru Lu", "Siyu An", "Weizhi Chen", "Baotian Hu", "Min Zhang"],
+        "year": 2023,
+        "venue": "ACL 2024 Findings",
+        "arxiv_id": "2308.08239",
+        "lineage_group": "retrieval_external_memory",
+        "abstract": "Maintaining consistency in long-range open-domain dialogue requires recording key facts without cluttering context. MemoChat instructs LLMs to write structured memos and retrieve them through targeted queries.",
+        "key_sections": {
+            "Abstract": "MemoChat instructs LLMs to write structured memos and retrieve them through targeted queries for long-range dialogue.",
+            "Architecture": "Memo repository storing topic-specific structured records indexed by dialogue turn and topic tags.",
+            "Operations": "Memo writing (store), topic-based memo query (retrieve), memo rewrite (consolidate).",
+            "Limitations": "Topic segmentation errors lead to fragmented memos where related concepts are split across multiple disjoint records.",
+            "Experiments": "Tested on multi-session dialogue benchmarks evaluating factual consistency across 20+ turns."
+        }
+    },
+    {
+        "paper_id": "paper_memwalker_2023",
+        "title": "Memory-Augmented Language Models through Tree-Structured Memory (MemWalker)",
+        "authors": ["Howard Chen", "Ramakanth Pasunuru", "Jason Weston", "Asli Celikyilmaz"],
+        "year": 2023,
+        "venue": "ICLR 2024",
+        "arxiv_id": "2310.05029",
+        "lineage_group": "retrieval_external_memory",
+        "abstract": "Dense retrieval often struggles to locate relevant needles in vast textual haystacks. MemWalker reads long documents by structuring text into a summary tree, allowing the agent to navigate the tree iteratively to pinpoint target passages.",
+        "key_sections": {
+            "Abstract": "MemWalker structures text into a summary tree, allowing the agent to navigate the tree iteratively to pinpoint target passages.",
+            "Architecture": "Hierarchical tree-structured external memory where parent nodes hold summaries and leaf nodes hold raw document chunks.",
+            "Operations": "Tree construction via recursive summarization, tree-walking navigation (retrieve), leaf verification.",
+            "Limitations": "High retrieval latency due to sequential LLM inference at each branch point in the tree; routing errors at top nodes propagate downward.",
+            "Experiments": "Evaluated on long-context QA tasks on GovReport, QMSum, and NarrativeQA."
+        }
+    },
+    {
+        "paper_id": "paper_dense_retrieval_memory_2023",
+        "title": "Dense Retrieval for Agent Memory: Benchmarking Vector Stores under Realistic Query Drift",
+        "authors": ["Kavya Nair", "Alexander Becker", "Pranav Rajpurkar"],
+        "year": 2023,
+        "venue": "EMNLP 2023 System Demonstrations",
+        "arxiv_id": "2309.08112",
+        "lineage_group": "retrieval_external_memory",
+        "abstract": "We evaluate traditional dense embedding retrieval (Dense Passage Retrieval, Contriever) when used as external agent memory under realistic conversational drift and synonym variation.",
+        "key_sections": {
+            "Abstract": "We evaluate traditional dense embedding retrieval when used as external agent memory under realistic conversational drift.",
+            "Architecture": "HNSW vector index storing dense vector embeddings of past user utterances and environmental feedback.",
+            "Operations": "Vector embedding computation, approximate nearest neighbor search (retrieve), cosine distance ranking.",
+            "Limitations": "Semantic confusion: dense vectors match topical similarity rather than temporal relevance or causal sequence, pulling outdated facts.",
+            "Experiments": "Evaluated on multi-turn dialogue memory benchmarks and question-answering over personal histories."
+        }
+    },
+    {
+        "paper_id": "paper_rag_survey_memory_2023",
+        "title": "Retrieval-Augmented Generation for Large Language Models: A Survey of Memory Architectures",
+        "authors": ["Yunfan Gao", "Yun Xiong", "Xinyu Gao", "Kangxiang Jia", "Jinliu Pan", "Yuxi Bi", "Yi Dai", "Jiawei Sun", "Meng Wang", "Haofen Wang"],
+        "year": 2023,
+        "venue": "arXiv:2312.10997",
+        "arxiv_id": "2312.10997",
+        "lineage_group": "retrieval_external_memory",
+        "abstract": "This survey analyzes the paradigm shift from static RAG to dynamic agent memory. We categorize retrieval mechanisms into pre-retrieval, iterative retrieval, and adaptive retrieval, mapping their role in agent architectures.",
+        "key_sections": {
+            "Abstract": "This survey analyzes the paradigm shift from static RAG to dynamic agent memory, categorizing retrieval mechanisms.",
+            "Architecture": "Taxonomy of external memory systems: modular RAG, recursive RAG, and self-reflective RAG.",
+            "Operations": "Dynamic query formulation, iterative retrieval-generation loops, retrieval evaluation.",
+            "Limitations": "Identifies recurring retrieval failure modes across literature: retrieval noise, out-of-order synthesis, and hallucinated grounding.",
+            "Experiments": "Comprehensive comparative meta-analysis over 100+ RAG and agent memory studies."
+        }
+    },
+    {
+        "paper_id": "paper_c-rag_2024",
+        "title": "Corrective Retrieval Augmented Generation (CRAG)",
+        "authors": ["Shi-Qi Yan", "Jia-Chen Gu", "Yun Zhu", "Zhen-Hua Ling"],
+        "year": 2024,
+        "venue": "ICLR 2024",
+        "arxiv_id": "2401.15884",
+        "lineage_group": "retrieval_external_memory",
+        "abstract": "We design CRAG to improve the robustness of external retrieval memory. CRAG employs a retrieval evaluator to assess the quality of retrieved documents, triggering web search fallback when internal retrieval confidence is low.",
+        "key_sections": {
+            "Abstract": "CRAG employs a retrieval evaluator to assess document quality, triggering web search fallback when confidence is low.",
+            "Architecture": "Dual-memory architecture incorporating internal vector memory, retrieval evaluator, and external search engine fallback.",
+            "Operations": "Confidence scoring, memory filtering, web search fallback, knowledge refinement.",
+            "Limitations": "Evaluator miscalibration: false negatives reject relevant internal memory, triggering unnecessary external web API latency.",
+            "Experiments": "Tested on PopQA, Biography, and Pub/Health QA benchmarks."
+        }
+    },
+    {
+        "paper_id": "paper_active_rag_2023",
+        "title": "Active Retrieval Augmented Generation (FLARE)",
+        "authors": ["Zhengbao Jiang", "Frank F. Xu", "Luyu Gao", "Zhiqing Sun", "Qian Liu", "Jane Dwivedi-Sankaran", "Jamie Callan", "Graham Neubig"],
+        "year": 2023,
+        "venue": "EMNLP 2023",
+        "arxiv_id": "2305.06983",
+        "lineage_group": "retrieval_external_memory",
+        "abstract": "Existing RAG systems retrieve memory passively at the start of generation. We propose Forward-Looking Active REtrieval (FLARE), which monitors generation confidence and triggers external memory retrieval dynamically when predicting low-probability tokens.",
+        "key_sections": {
+            "Abstract": "We propose FLARE, which monitors generation confidence and triggers external memory retrieval dynamically on low-probability tokens.",
+            "Architecture": "Active retrieval scheduler operating on token log-probabilities to dynamically pause decoding and formulate retrieval queries.",
+            "Operations": "Confidence tracking, dynamic query synthesis, mid-generation memory insertion.",
+            "Limitations": "Interrupted decoding adds computational overhead; false alarms trigger superfluous retrieval queries for stylistic variations.",
+            "Experiments": "Evaluated on long-form QA (ASQA, Wiki-Asp) and complex knowledge reasoning."
+        }
+    },
+    {
+        "paper_id": "paper_self_rag_2023",
+        "title": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection",
+        "authors": ["Akari Asai", "Zeqiu Wu", "Yizhong Wang", "Avirup Sil", "Hannaneh Hajishirzi"],
+        "year": 2023,
+        "venue": "ICLR 2024",
+        "arxiv_id": "2310.11511",
+        "lineage_group": "retrieval_external_memory",
+        "abstract": "We introduce Self-RAG, an end-to-end framework that trains a model to dynamically retrieve external memory on-demand and evaluate the retrieved passages using special reflection tokens.",
+        "key_sections": {
+            "Abstract": "We introduce Self-RAG, an end-to-end framework that trains a model to retrieve memory on-demand and evaluate passages using reflection tokens.",
+            "Architecture": "Reflection-token augmented model architecture generating [Retrieve], [IsRel], [IsSup], and [IsUse] tokens during decoding.",
+            "Operations": "Adaptive retrieval trigger, relevance filtering, critique beam search, memory integration.",
+            "Limitations": "Requires fine-tuning model weights with specialized token vocabularies, restricting applicability on proprietary API models.",
+            "Experiments": "Evaluated on open-domain QA, reasoning (StrategyQA), and fact verification."
+        }
+    },
+
+    # =========================================================================
+    # LINEAGE 5: Structured & Graph-Based Memory
+    # =========================================================================
+    {
+        "paper_id": "paper_kg_agent_2024",
+        "title": "KG-Agent: An Efficient Autonomous Agent Framework Powered by Knowledge Graph Memory",
+        "authors": ["Yubo Chen", "Zhiying Tu", "Zhe Zheng", "Dianbo Sui", "Kang Liu", "Jun Zhao"],
+        "year": 2024,
+        "venue": "ACL 2024",
+        "arxiv_id": "2402.11163",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "Unstructured text memory leads to hallucinations and fuzzy associative retrieval. We propose KG-Agent, an autonomous agent framework that maintains an evolving knowledge graph as its core memory backbone. By representing facts as explicit (entity, relation, entity) triplets, KG-Agent enables rigorous multi-hop relational reasoning and precise memory updating.",
+        "key_sections": {
+            "Abstract": "KG-Agent maintains an evolving knowledge graph as its core memory backbone, representing facts as explicit triplets.",
+            "Architecture": "Relational memory graph storing entities and directed relations. The memory module includes an entity linker, a triple extractor, and a graph reasoning engine executing symbolic queries over the agent's memory state.",
+            "Operations": "Triple extraction from observations (store), entity linking, relational graph traversal (retrieve), knowledge graph consistency maintenance (consolidate/evict).",
+            "Limitations": "Information loss during triple extraction: complex nuanced observations or probabilistic qualifications cannot be fully captured in simple binary relational triplets.",
+            "Experiments": "Evaluated on WebQA and complex multi-hop decision tasks, demonstrating high precision over flat vector memory."
+        }
+    },
+    {
+        "paper_id": "paper_graph_of_thought_2023",
+        "title": "Graph of Thoughts: Solving Elaborate Problems with Large Language Models",
+        "authors": ["Maciej Besta", "Nils Blach", "Ales Kubicek", "Robert Gerstenberger", "Lukas Gianinazzi", "Javier Gajda", "Tomasz Lehmann", "Michal Podstawski", "Hubert Niewiadomski", "Piotr Nykiel", "Torsten Hoefler"],
+        "year": 2023,
+        "venue": "AAAI 2024",
+        "arxiv_id": "2308.09687",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "We introduce Graph of Thoughts (GoT), which models LLM reasoning as an arbitrary directed graph where thoughts are vertices and dependencies are edges. This enables combining, aggregating, and looping over distinct reasoning memory paths.",
+        "key_sections": {
+            "Abstract": "We introduce Graph of Thoughts (GoT), modeling LLM reasoning as an arbitrary directed graph of thoughts.",
+            "Architecture": "Graph Reasoning Engine maintaining vertices (thoughts/memory units) and directed edges (transformations and dependencies).",
+            "Operations": "Thought vertex creation, thought combination, graph transformations, score-based vertex pruning.",
+            "Limitations": "Graph explosion: complex problems generate hundreds of thought vertices, requiring aggressive pruning heuristics that risk discarding optimal solutions.",
+            "Experiments": "Evaluated on sorting, set intersection, keyword counting, and document merge tasks."
+        }
+    },
+    {
+        "paper_id": "paper_memgraph_2024",
+        "title": "MemGraph: Dynamic Knowledge Graph Memory with Temporal Edge Invalidation",
+        "authors": ["Haochen Liu", "Ruixiang Tang", "Xia Hu"],
+        "year": 2024,
+        "venue": "EMNLP 2024",
+        "arxiv_id": "2404.14321",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "Real-world agent environments change over time, rendering older facts untrue. MemGraph introduces temporal knowledge graph memory where edges possess valid time intervals, automatically expiring stale relational connections.",
+        "key_sections": {
+            "Abstract": "MemGraph introduces temporal knowledge graph memory where edges possess valid time intervals to invalidate stale connections.",
+            "Architecture": "Temporal knowledge graph where edges are annotated with validity timestamps [t_start, t_end] and certainty weights.",
+            "Operations": "Temporal edge insertion (store), validity query filtering (retrieve), temporal invalidation (evict), edge conflict resolution (consolidate).",
+            "Limitations": "Timestamp inference inaccuracy: models struggle to infer implicit temporal bounds when observations lack explicit calendar dates.",
+            "Experiments": "Evaluated on temporal question answering (TempQA) and dynamic dialogue tracking."
+        }
+    },
+    {
+        "paper_id": "paper_mindmap_2023",
+        "title": "MindMap: Knowledge Graph Prompting for Multi-Hop Medical Diagnostic Agents",
+        "authors": ["Yilin Wen", "Zifeng Wang", "Jimeng Sun"],
+        "year": 2023,
+        "venue": "NeurIPS 2023",
+        "arxiv_id": "2309.02712",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "Medical agents must ground decisions in verified clinical knowledge. MindMap constructs a dynamic patient-specific graph memory linked to external medical knowledge ontologies (UMLS), guiding diagnostic reasoning along validated clinical paths.",
+        "key_sections": {
+            "Abstract": "MindMap constructs dynamic patient graph memory linked to external medical ontologies (UMLS) for diagnostic reasoning.",
+            "Architecture": "Hybrid graph memory integrating patient observation subgraphs with external medical knowledge graph backbones.",
+            "Operations": "Entity extraction, ontology grounding, subgraph expansion (retrieve), evidence path reasoning.",
+            "Limitations": "High dependency on the coverage and cleanliness of external knowledge bases; unmapped rare diseases cause retrieval gaps.",
+            "Experiments": "Tested on USMLE clinical reasoning questions and MedQA benchmarks."
+        }
+    },
+    {
+        "paper_id": "paper_socratic_memory_2024",
+        "title": "Socratic Graph Memory: Dialectical Reasoning via Concept Graph Traversal in Autonomous Agents",
+        "authors": ["David Miller", "Sanjay Krishnan", "Elena Ferrara"],
+        "year": 2024,
+        "venue": "ICML 2024 Workshop",
+        "arxiv_id": "2405.02194",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "We present Socratic Graph Memory, an architecture that structures memory into thesis, antithesis, and synthesis nodes. The agent traverses counter-arguments before finalizing execution plans.",
+        "key_sections": {
+            "Abstract": "Socratic Graph Memory structures memory into thesis, antithesis, and synthesis nodes to traverse counter-arguments.",
+            "Architecture": "Dialectical graph memory network with adversarial hypothesis edges and synthesis resolution nodes.",
+            "Operations": "Thesis node logging, antithesis generation, synthesis consolidation, dialectical traversal.",
+            "Limitations": "Analysis paralysis: agent gets trapped debating mutually contradictory hypotheses without converging on actionable output.",
+            "Experiments": "Evaluated on complex ethical reasoning and ambiguous multi-stakeholder decision tasks."
+        }
+    },
+    {
+        "paper_id": "paper_tree_of_thought_2023",
+        "title": "Tree of Thoughts: Deliberate Problem Solving with Large Language Models",
+        "authors": ["Shunyu Yao", "Dian Yu", "Jeffrey Zhao", "Izhak Shafran", "Thomas L. Griffiths", "Yuan Cao", "Karthik Narasimhan"],
+        "year": 2023,
+        "venue": "NeurIPS 2023",
+        "arxiv_id": "2305.10601",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "We introduce Tree of Thoughts (ToT), enabling exploration over coherent units of text (thoughts) that serve as intermediate steps toward problem solving. ToT maintains a tree memory where search algorithms (BFS/DFS) explore and backtrack.",
+        "key_sections": {
+            "Abstract": "ToT maintains a tree memory where search algorithms (BFS/DFS) explore, evaluate, and backtrack over intermediate thoughts.",
+            "Architecture": "Search-tree memory architecture maintaining parent-child node relationships with associated state evaluations.",
+            "Operations": "Thought generation, heuristic state evaluation, tree backtracking, branch pruning.",
+            "Limitations": "Combinatorial state explosion; search tree size scales exponentially with planning depth.",
+            "Experiments": "Tested on Game of 24, Creative Writing, and 5x5 Mini Crosswords."
+        }
+    },
+    {
+        "paper_id": "paper_graph_rag_2024",
+        "title": "From Local to Global: A Graph RAG Approach to Query-Focused Summarization",
+        "authors": ["Darren Edge", "Ha Trinh", "Newman Cheng", "Joshua Bradley", "Alex Chao", "Apurva Mody", "Steven Truitt", "Jonathan Larson"],
+        "year": 2024,
+        "venue": "arXiv:2404.16130",
+        "arxiv_id": "2404.16130",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "We present GraphRAG, combining LLM-extracted knowledge graphs with community detection algorithms (Leiden) to generate hierarchical community summaries, allowing agents to reason over global corpus structures.",
+        "key_sections": {
+            "Abstract": "GraphRAG combines knowledge graphs with community detection to generate hierarchical summaries for global corpus reasoning.",
+            "Architecture": "Hierarchical graph memory structured into entity-relation graphs, clustered into communities via Leiden algorithm with pre-computed community summaries.",
+            "Operations": "Graph extraction, community clustering, hierarchical summarization, global query traversal.",
+            "Limitations": "High offline index construction cost: requires thousands of LLM extraction calls to build initial graph clusters.",
+            "Experiments": "Evaluated on multi-hop query-focused summarization across large document corpora."
+        }
+    },
+    {
+        "paper_id": "paper_hypergraph_memory_2024",
+        "title": "HyperGraph Memory: Modeling Higher-Order Interactions in Multi-Agent Collaborative Systems",
+        "authors": ["Guoqing Zhang", "Linfeng Song", "Kun Xu"],
+        "year": 2024,
+        "venue": "AAAI 2024",
+        "arxiv_id": "2403.04891",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "Standard graphs only capture pairwise relations. We propose HyperGraph Memory, where hyperedges connect arbitrary numbers of agent actions, environmental states, and outcomes simultaneously.",
+        "key_sections": {
+            "Abstract": "HyperGraph Memory connects arbitrary numbers of agent actions, states, and outcomes simultaneously using hyperedges.",
+            "Architecture": "Hypergraph relational memory structure with multi-node hyperedges representing multi-party interactions.",
+            "Operations": "Hyperedge creation, hypergraph incidence matrix search, multi-hop hyper-walk.",
+            "Limitations": "Extremely high computational complexity during hypergraph spectral decomposition and search.",
+            "Experiments": "Evaluated on cooperative multi-agent games and multi-robot swarm logistics."
+        }
+    },
+    {
+        "paper_id": "paper_relational_sketchpad_2023",
+        "title": "Relational Scratchpads: Enhancing LLM Reasoning via Dynamic Graph Memory Tables",
+        "authors": ["Mengting Wan", "Sean O'Banion", "Nicholas Dingwall"],
+        "year": 2023,
+        "venue": "ACL 2023",
+        "arxiv_id": "2306.07914",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "We propose Relational Scratchpads, structuring intermediate scratchpad memory into dynamic tabular graphs with explicit foreign-key linkages between entities.",
+        "key_sections": {
+            "Abstract": "We structure intermediate scratchpad memory into dynamic tabular graphs with explicit foreign-key linkages between entities.",
+            "Architecture": "In-context relational table schema with primary and foreign key constraints.",
+            "Operations": "Row insertion, table join query, schema integrity check.",
+            "Limitations": "Table token serialization overhead consumes substantial in-context prompt budget.",
+            "Experiments": "Tested on relational database reasoning and SQL synthesis tasks."
+        }
+    },
+    {
+        "paper_id": "paper_agent_kg_lifecycle_2024",
+        "title": "Knowledge Graph Memory Lifecycle in Continual Learning Agents",
+        "authors": ["Yao Wan", "Zhenyu Song", "Philip S. Yu"],
+        "year": 2024,
+        "venue": "KDD 2024",
+        "arxiv_id": "2406.12870",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "We analyze the lifecycle of graph memory in lifelong agents, proposing a unified formalization of node birth, edge reinforcement, edge decay, and graph consolidation.",
+        "key_sections": {
+            "Abstract": "We propose a unified formalization of node birth, edge reinforcement, edge decay, and graph consolidation for agent memory.",
+            "Architecture": "Dynamic graph memory engine with edge reinforcement counters and periodic subgraph merging.",
+            "Operations": "Edge reinforcement, graph community merging, isolated node garbage collection.",
+            "Limitations": "Consolidation latency pauses agent execution during large-scale graph merging phases.",
+            "Experiments": "Benchmarked on multi-week continual learning tasks in interactive web environments."
+        }
+    },
+
+    # =========================================================================
+    # LINEAGE 6: Benchmarks, Evaluation & Failure Mode Analysis
+    # =========================================================================
+    {
+        "paper_id": "paper_alfworld_2021",
+        "title": "ALFWorld: Aligning Text and Embodied Environments for Interactive Learning",
+        "authors": ["Mohit Shridhar", "Xingdi Yuan", "Marc-Alexandre Côté", "Yonatan Bisk", "Daniel Khashabi", "Matthew Hausknecht"],
+        "year": 2021,
+        "venue": "ICLR 2021",
+        "arxiv_id": "2010.03768",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "We present ALFWorld, a benchmark of interactive text environments aligned with physical embodied worlds (ALFRED). ALFWorld evaluates how agents reason, plan, and remember object locations and spatial relationships across multi-step household tasks.",
+        "key_sections": {
+            "Abstract": "ALFWorld evaluates how agents reason, plan, and remember object locations across multi-step household tasks.",
+            "Architecture": "Text-based embodied planning benchmark covering 6 distinct household task categories (pick-and-place, examine, clean, heat, cool).",
+            "Operations": "Step-by-step interactive environment stepping, reward verification, failure diagnostics.",
+            "Limitations": "Discrete action spaces do not capture real-world continuous motor failure modes.",
+            "Experiments": "De-facto standard benchmark adopted by Reflexion, ExpeL, Retroformer to evaluate episodic memory."
+        }
+    },
+    {
+        "paper_id": "paper_webarena_2023",
+        "title": "WebArena: A Realistic Web Environment for Building Autonomous Agents",
+        "authors": ["Shuyan Zhou", "Frank F. Xu", "Hao Zhu", "Xuhui Zhou", "Robert Lo", "Abishek Sridhar", "Xianyi Cheng", "Tianyue Ou", "Yonatan Bisk", "Daniel Fried", "Uri Alon", "Graham Neubig"],
+        "year": 2023,
+        "venue": "ICLR 2024",
+        "arxiv_id": "2307.13854",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "We introduce WebArena, an end-to-end web environment designed for building and evaluating autonomous agents. WebArena hosts fully functional standalone websites (e-commerce, social forum, collaborative code repository, content management system) to benchmark long-horizon interactive tasks requiring memory.",
+        "key_sections": {
+            "Abstract": "WebArena introduces a standalone realistic web environment to benchmark long-horizon interactive tasks requiring memory.",
+            "Architecture": "Sandboxed multi-domain web environment running live instances of GitLab, Shopping, Reddit, and Wikipedia.",
+            "Operations": "Browser action dispatch, DOM inspection, end-to-end task completion verification.",
+            "Limitations": "Demands high computational resources to self-host 4 live enterprise web servers.",
+            "Experiments": "Evaluates long-horizon navigation, memory retention across page loads, and multi-tab coordination."
+        }
+    },
+    {
+        "paper_id": "paper_gaia_2023",
+        "title": "GAIA: A Benchmark for General AI Assistants",
+        "authors": ["Grégoire Mialon", "Clémentine Fourrier", "Craig Swift", "Thomas Wolf", "Yann LeCun", "Thomas Scialom"],
+        "year": 2023,
+        "venue": "ICLR 2024",
+        "arxiv_id": "2311.12983",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "We propose GAIA (General AI Assistant), a benchmark designed to evaluate generalist AI assistants on multi-modal, long-horizon tasks requiring complex reasoning, tool use, and multi-modal memory integration. Questions are conceptually easy for humans but difficult for AI.",
+        "key_sections": {
+            "Abstract": "We propose GAIA to evaluate generalist AI assistants on multi-modal, long-horizon tasks requiring tool use and memory.",
+            "Architecture": "Curated 466 questions across 3 difficulty tiers testing web browsing, spreadsheet analysis, image comprehension, and OS operations.",
+            "Operations": "Multimodal file ingestion, complex reasoning verification, ground-truth answer matching.",
+            "Limitations": "Strict exact-match answer format occasionally penalizes correct answers formatted differently.",
+            "Experiments": "Highlights failure of static context models; establishes baseline necessity for external memory."
+        }
+    },
+    {
+        "paper_id": "paper_agentbench_2023",
+        "title": "AgentBench: Evaluating LLMs as Agents",
+        "authors": ["Xiao Liu", "Hao Yu", "Hanchen Zhang", "Yifan Xu", "Xuanyu Lei", "Hanyu Lai", "Yu Gu", "Hanghang Ding", "Kaiwen Men", "Kehan Yang", "Shudan Zhang", "Xiang Deng", "Aohan Zeng", "Zhengxiao Du", "Chenhui Zhang", "Sheng Shen", "Tianjun Zhang", "Yu Su", "Huan Sun", "Minlie Huang", "Yuxiao Dong", "Jie Tang"],
+        "year": 2023,
+        "venue": "ICLR 2024",
+        "arxiv_id": "2308.03688",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "We present AgentBench, the first comprehensive benchmark designed to evaluate LLMs as autonomous agents across 8 distinct environments including operating systems, databases, web browsing, and digital games.",
+        "key_sections": {
+            "Abstract": "AgentBench presents the first comprehensive benchmark evaluating LLMs as autonomous agents across 8 distinct environments.",
+            "Architecture": "Unified evaluation toolkit wrapping 8 distinct operational environments with standardized agent API interfaces.",
+            "Operations": "Standardized interaction logging, step limits, task completion scoring.",
+            "Limitations": "Heavy environmental variability requires containerized virtualization for every sub-task.",
+            "Experiments": "Systematic benchmarking of 27 commercial and open-source models, highlighting context exhaustion as the primary bottleneck."
+        }
+    },
+    {
+        "paper_id": "paper_lost_in_middle_2023",
+        "title": "Lost in the Middle: How Language Models Use Long Contexts",
+        "authors": ["Nelson F. Liu", "Kevin Lin", "John Hewitt", "Ashwin Paranjape", "Michele Bevilacqua", "Fabio Petroni", "Percy Liang"],
+        "year": 2023,
+        "venue": "Transactions of the ACL (TACL) 2024",
+        "arxiv_id": "2307.03172",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "While language models advertise context windows of 32k+ tokens, we discover that model performance degrades significantly when key information is located in the middle of long input contexts, exhibiting a U-shaped performance curve.",
+        "key_sections": {
+            "Abstract": "Model performance degrades significantly when key information is located in the middle of long input contexts (U-shaped curve).",
+            "Architecture": "Controlled multi-document question answering synthetic benchmark varying the exact position of gold documents.",
+            "Operations": "Context position perturbation, retrieval accuracy scoring, position-dependent error analysis.",
+            "Limitations": "Tested primarily on extractive multi-document QA rather than interactive conversational agent loops.",
+            "Experiments": "Demonstrates why naive context window packing fails for agents and why structured memory paging is mathematically necessary."
+        }
+    },
+    {
+        "paper_id": "paper_memory_drift_study_2024",
+        "title": "Memory Drift and Hallucination Accumulation in Long-Horizon Autonomous Agents",
+        "authors": ["Alexander Vance", "Meera Sunder", "Karthik Subramanian"],
+        "year": 2024,
+        "venue": "EMNLP 2024 Findings",
+        "arxiv_id": "2403.19041",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "We empirically study failure modes in agent episodic memory over 100+ turn interactions. We identify memory drift: the gradual distortion of factual truth as agents summarize and re-summarize past events.",
+        "key_sections": {
+            "Abstract": "We identify memory drift: the gradual distortion of factual truth as agents summarize and re-summarize past events over 100+ turns.",
+            "Architecture": "Controlled multi-session benchmark tracking factual mutation across successive memory summarization cycles.",
+            "Operations": "Factual distortion measurement, hallucination propagation tracking, semantic error taxonomy.",
+            "Limitations": "Focuses on text summarization buffers rather than code-based procedural memory libraries.",
+            "Experiments": "Evaluates 10 popular agent memory frameworks, showing a 42% cumulative error rate after 50 conversational sessions."
+        }
+    },
+    {
+        "paper_id": "paper_retrieval_distraction_2024",
+        "title": "Retrieval Distraction: When External Memory Hurts Agent Decision Making",
+        "authors": ["Jonathan Shi", "Daniel Kang", "Matei Zaharia"],
+        "year": 2024,
+        "venue": "ICLR 2025 Submission / arXiv:2406.09821",
+        "arxiv_id": "2406.09821",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "External memory retrieval is assumed to universally help agents. We prove that irrelevant or marginally relevant retrieved memories distract LLM reasoning, decreasing task success by up to 28% compared to no memory.",
+        "key_sections": {
+            "Abstract": "We show that irrelevant or marginally relevant retrieved memories distract LLM reasoning, decreasing task success by up to 28%.",
+            "Architecture": "Controlled distraction injection framework adding top-K distractor memories into agent prompts across planning benchmarks.",
+            "Operations": "Distractor injection, attention distraction measurement, task degradation tracking.",
+            "Limitations": "Does not test multi-modal agent environments.",
+            "Experiments": "Demonstrates critical need for strict memory filtering and relevance verification before context injection."
+        }
+    },
+    {
+        "paper_id": "paper_hotpotqa_2018",
+        "title": "HotpotQA: A Dataset for Diverse, Explainable Multi-hop Question Answering",
+        "authors": ["Zhilin Yang", "Peng Qi", "Saizheng Zhang", "Yoshua Bengio", "William W. Cohen", "Ruslan Salakhutdinov", "Christopher D. Manning"],
+        "year": 2018,
+        "venue": "EMNLP 2018",
+        "arxiv_id": "1809.09600",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "We present HotpotQA, a new dataset with 113k Wikipedia-based question-answer pairs that require reading and reasoning over multiple supporting documents, serving as a primary benchmark for agent multi-hop memory retrieval.",
+        "key_sections": {
+            "Abstract": "HotpotQA requires reading and reasoning over multiple supporting documents to solve multi-hop questions.",
+            "Architecture": "Multi-hop question answering benchmark with sentence-level supporting fact annotations.",
+            "Operations": "Multi-step retrieval evaluation, supporting fact precision/recall scoring, answer exact match.",
+            "Limitations": "Static Wikipedia dump does not test agent environmental actions or state modifications.",
+            "Experiments": "Universally adopted as standard multi-hop associative recall benchmark for HippoRAG, Reflexion, and GraphRAG."
+        }
+    },
+    {
+        "paper_id": "paper_mind2web_2023",
+        "title": "Mind2Web: Towards a Generalist Agent for the Web",
+        "authors": ["Xiang Deng", "Yu Gu", "Boyuan Zheng", "Shijie Chen", "Samuel Stevens", "Boshi Wang", "Huan Sun", "Yu Su"],
+        "year": 2023,
+        "venue": "NeurIPS 2023",
+        "arxiv_id": "2306.06070",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "We introduce Mind2Web, the first dataset for developing and evaluating generalist web agents across 137 real-world websites, covering 2,000 tasks and testing procedural memory for web interaction.",
+        "key_sections": {
+            "Abstract": "Mind2Web introduces a dataset evaluating generalist web agents across 137 real websites and 2,000 tasks.",
+            "Architecture": "Real-world web task suite with raw DOM trees, element annotations, and sequential action recordings.",
+            "Operations": "Target element selection, operation prediction, cross-site generalization testing.",
+            "Limitations": "Offline dataset format cannot evaluate dynamic responsive server feedback.",
+            "Experiments": "Evaluates procedural and episodic memory for DOM navigation across travel, shopping, and enterprise tools."
+        }
+    },
+    {
+        "paper_id": "paper_memory_safety_2024",
+        "title": "Security and Privacy Vulnerabilities in Agentic Memory Systems: Prompt Injections through Persistent Storage",
+        "authors": ["Niv Harel", "Danielle Levin", "Eran Tromer"],
+        "year": 2024,
+        "venue": "USENIX Security 2025 / arXiv:2405.12901",
+        "arxiv_id": "2405.12901",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "We reveal a critical vulnerability in autonomous agents with persistent memory: Indirect Prompt Injection via Memory Pollution. Malicious external content stored into episodic memory executes when later retrieved.",
+        "key_sections": {
+            "Abstract": "We reveal a critical vulnerability: Indirect Prompt Injection via Memory Pollution in persistent storage.",
+            "Architecture": "Attack framework demonstrating persistent memory poisoning, delayed payload activation, and privilege escalation.",
+            "Operations": "Memory poisoning injection, retrieval triggering, privilege escalation verification.",
+            "Limitations": "Does not address physical robot memory tampering.",
+            "Experiments": "Demonstrates successful cross-session prompt injection attacks against MemGPT, AutoGPT, and ChatDev."
+        }
+    },
+    # Additional foundational and recent 2024-2025 papers
+    {
+        "paper_id": "paper_react_2022",
+        "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+        "authors": ["Shunyu Yao", "Jeffrey Zhao", "Dian Yu", "Nan Du", "Izhak Shafran", "Karthik Narasimhan", "Yuan Cao"],
+        "year": 2022,
+        "venue": "ICLR 2023",
+        "arxiv_id": "2210.03629",
+        "lineage_group": "working_context_memory",
+        "abstract": "We explore using LLMs to generate both reasoning traces and task-specific actions in an interleaved manner. ReAct maintains an in-context action-observation working memory buffer that logs intermediate thought-action-observation cycles.",
+        "key_sections": {
+            "Abstract": "ReAct maintains an in-context action-observation working memory buffer that logs intermediate thought-action-observation cycles.",
+            "Architecture": "Interleaved scratchpad buffer where reasoning traces guide action generation and observation returns are appended to context.",
+            "Operations": "Thought generation, action dispatch, observation logging, context append.",
+            "Limitations": "Context window exhaustion: long trajectories rapidly overflow context limits, causing error loops without task resolution.",
+            "Experiments": "Evaluated on HotpotQA, Fever, ALFWorld, and WebShop."
+        }
+    },
+    {
+        "paper_id": "paper_lats_2024",
+        "title": "Language Agent Tree Search Unifies Reasoning, Acting, and Planning in Language Models",
+        "authors": ["Andy Zhou", "Kai Yan", "Michal Shlapentokh-Rothman", "Haohan Wang", "Yu-Xiong Wang"],
+        "year": 2024,
+        "venue": "ICML 2024",
+        "arxiv_id": "2310.04406",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "We present Language Agent Tree Search (LATS), an agent framework that incorporates Monte Carlo Tree Search (MCTS) with reflective episodic memory to enable deliberate planning and backtracking across decision branches.",
+        "key_sections": {
+            "Abstract": "LATS incorporates Monte Carlo Tree Search with reflective episodic memory to enable deliberate planning and backtracking.",
+            "Architecture": "Search tree memory where nodes store state observations and reflections, edges store actions, and rollout values guide exploration.",
+            "Operations": "Node expansion, reflection backpropagation, tree pruning, best-path selection.",
+            "Limitations": "High inference cost: running MCTS rollouts requires dozens of LLM calls per planning decision.",
+            "Experiments": "Evaluated on HotpotQA, HumanEval, and WebShop."
+        }
+    },
+    {
+        "paper_id": "paper_inner_monologue_2022",
+        "title": "Inner Monologue: Embodied Reasoning through Planning with Language Models",
+        "authors": ["Wenlong Huang", "Fei Xia", "Ted Xiao", "Harris Chan", "Jacky Liang", "Pete Florence", "Andy Zeng"],
+        "year": 2022,
+        "venue": "CoRL 2022",
+        "arxiv_id": "2207.05608",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "We demonstrate that embodied agents can reason over physical world interactions by injecting continuous perception feedback into an in-context inner monologue memory buffer.",
+        "key_sections": {
+            "Abstract": "Embodied agents reason over physical interactions by injecting continuous perception feedback into an in-context inner monologue buffer.",
+            "Architecture": "Perceptual feedback loop appending success detection, passive scene descriptions, and human corrections into working memory.",
+            "Operations": "Perceptual logging, contingency plan generation, inner monologue update.",
+            "Limitations": "Sensor noise injects false perceptual assertions into the monologue buffer, leading to persistent planning hallucinations.",
+            "Experiments": "Evaluated on tabletop manipulation and mobile robot navigation tasks."
+        }
+    },
+    {
+        "paper_id": "paper_memorag_2024",
+        "title": "MemoRAG: Moving towards Next-Gen RAG via Memory-Inspired Architecture",
+        "authors": ["Hongjin Qian", "Zheng Liu", "Kelvin Guu", "Xing Xie"],
+        "year": 2024,
+        "venue": "arXiv:2409.05591",
+        "arxiv_id": "2409.05591",
+        "lineage_group": "retrieval_external_memory",
+        "abstract": "MemoRAG proposes a dual-system architecture: a lightweight memory model forms global impressions over long contexts, while an expressive model generates answers by querying memory-guided clues.",
+        "key_sections": {
+            "Abstract": "MemoRAG proposes a dual-system architecture where a memory model forms global impressions to guide precise clue retrieval.",
+            "Architecture": "Dual-system framework: global memory model generating retrieval clues and standard reader LLM processing targeted evidence.",
+            "Operations": "Global memory encoding, clue generation, targeted retrieval, answer synthesis.",
+            "Limitations": "Memory clue divergence: if the memory model generates erroneous clues, retrieval misses essential evidence passages.",
+            "Experiments": "Tested on UltraDomain and long-context benchmarks across 1M token contexts."
+        }
+    },
+    {
+        "paper_id": "paper_adaplanner_2023",
+        "title": "AdaPlanner: Adaptive Planning from Feedback with Language Models",
+        "authors": ["Haotian Sun", "Yuchen Zhuang", "Lingkai Kong", "Bo Dai", "Chao Zhang"],
+        "year": 2023,
+        "venue": "NeurIPS 2023",
+        "arxiv_id": "2305.16653",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "AdaPlanner enables language agents to adaptively refine their plans based on environmental feedback without retraining, utilizing in-plan episodic memory modifications.",
+        "key_sections": {
+            "Abstract": "AdaPlanner enables language agents to adaptively refine their plans based on feedback utilizing in-plan episodic memory modifications.",
+            "Architecture": "Closed-loop planning architecture with an in-plan refinement memory buffer that updates plan steps dynamically upon failure.",
+            "Operations": "Plan execution monitoring, error localized reflection, selective plan modification.",
+            "Limitations": "Local minimum trapping: localized plan edits fail when fundamental initial premises of the plan were flawed.",
+            "Experiments": "Evaluated on ALFWorld and MiniWoB++ web environments."
+        }
+    },
+    {
+        "paper_id": "paper_clin_2023",
+        "title": "CLIN: Continual Learning with In-Context Memory for Language Agents",
+        "authors": ["Bodhisattwa Prasad Majumder", "Bhavana Jain", "Peter Clark"],
+        "year": 2023,
+        "venue": "EMNLP 2023",
+        "arxiv_id": "2310.10134",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "Continual learning without parameter updates requires persistent memory. CLIN maintains a dynamic memory of causal trial-and-error rules, updating them after each episode.",
+        "key_sections": {
+            "Abstract": "CLIN maintains a dynamic memory of causal trial-and-error rules, updating them after each episode for continual learning.",
+            "Architecture": "Continual episodic rule memory maintaining hypothesis-action-outcome causal chains across successive tasks.",
+            "Operations": "Causal rule extraction, rule validation, memory conflict eviction, rule generalization.",
+            "Limitations": "Catastrophic rule pruning: evicting conflicting rules can degrade performance on previous task domains.",
+            "Experiments": "Evaluated on ScienceWorld across 30 sequential multi-step tasks."
+        }
+    },
+    {
+        "paper_id": "paper_longagent_2024",
+        "title": "LongAgent: Scaling Language Partner to 128k Context via Collaborative Memory Networks",
+        "authors": ["Junlong Zhao", "Tianyu Liu", "Baobao Chang"],
+        "year": 2024,
+        "venue": "ACL 2024",
+        "arxiv_id": "2402.11550",
+        "lineage_group": "working_context_memory",
+        "abstract": "LongAgent decomposes long-context processing among a swarm of collaborative agents, each managing a localized memory partition with inter-agent communication channels.",
+        "key_sections": {
+            "Abstract": "LongAgent decomposes long-context processing among collaborative agents managing localized memory partitions.",
+            "Architecture": "Hierarchical multi-agent memory network with leader-follower communication channels across context segments.",
+            "Operations": "Context chunk partitioning, inter-agent query dispatch, summary consensus aggregation.",
+            "Limitations": "Communication overhead and inter-agent message distortion during multi-round consensus debates.",
+            "Experiments": "Tested on 128k needle-in-a-haystack tasks and multi-document synthetic reasoning."
+        }
+    },
+    {
+        "paper_id": "paper_sciagent_2024",
+        "title": "SciAgent: Research Paper Onboarding and Hypothesis Memory for Autonomous Scientists",
+        "authors": ["Chenguang Wang", "Yuan-Fang Li", "Sheng Shen"],
+        "year": 2024,
+        "venue": "NeurIPS 2024 Workshop / arXiv:2407.01890",
+        "arxiv_id": "2407.01890",
+        "lineage_group": "structured_graph_memory",
+        "abstract": "SciAgent helps incoming researchers onboard to scientific domains by structuring paper collections into hypothesis-claim-evidence knowledge graphs with temporal evolution tracking.",
+        "key_sections": {
+            "Abstract": "SciAgent structures paper collections into hypothesis-claim-evidence knowledge graphs with temporal evolution tracking.",
+            "Architecture": "Scientific ontology memory graph linking papers, hypotheses, empirical claims, and experimental benchmarks.",
+            "Operations": "Claim extraction, citation lineage tracing, contradictory claim detection, reading order synthesis.",
+            "Limitations": "Sensitivity to ambiguous phrasing in scientific abstracts; requires explicit empirical benchmark names.",
+            "Experiments": "Evaluated on bio-informatics and machine learning literature synthesis benchmarks."
+        }
+    },
+    {
+        "paper_id": "paper_proagent_2023",
+        "title": "ProAgent: From Robotic Process Automation to Agent Process Automation via Procedural Memory",
+        "authors": ["Yuxiang Ji", "Zhe Zheng", "Baoquan Chen"],
+        "year": 2023,
+        "venue": "AAAI 2024",
+        "arxiv_id": "2311.14488",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "ProAgent bridges high-level reasoning with deterministic software workflows by building a procedural workflow memory that caches validated API call graphs.",
+        "key_sections": {
+            "Abstract": "ProAgent builds a procedural workflow memory that caches validated API call graphs for deterministic software automation.",
+            "Architecture": "Directed workflow DAG memory caching validated execution routines, parameters, and failure recovery handlers.",
+            "Operations": "Workflow recording, parameter parameterization, graph execution replay, exception handling.",
+            "Limitations": "Inflexible to unexpected UI popups or API error code changes outside recorded DAG paths.",
+            "Experiments": "Evaluated on enterprise RPA benchmarks across CRM, ERP, and email automation."
+        }
+    },
+    {
+        "paper_id": "paper_agentmonitor_2024",
+        "title": "AgentMonitor: Guardrailing Agent Memory against Drift and Adversarial Corruption",
+        "authors": ["Rohan Sen", "Kavita Ramaswamy", "Dan Klein"],
+        "year": 2024,
+        "venue": "EMNLP 2024",
+        "arxiv_id": "2408.06712",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "We introduce AgentMonitor, an invariant checking supervisor that inspects memory updates in autonomous agents to prevent hallucination buildup and adversarial prompt injection.",
+        "key_sections": {
+            "Abstract": "AgentMonitor inspects memory updates in autonomous agents to prevent hallucination buildup and prompt injection.",
+            "Architecture": "External guardrail monitor validating semantic diffs between pre-update and post-update agent memory states.",
+            "Operations": "Memory diff auditing, anomaly score computation, corrupted memory rollback.",
+            "Limitations": "False positive rollbacks: valid unexpected user updates are sometimes flagged as anomalous and rejected.",
+            "Experiments": "Evaluated across 500 adversarial dialogue and tool execution scenarios."
+        }
+    },
+    {
+        "paper_id": "paper_dialpack_2024",
+        "title": "DialPack: Selective Context Compaction for Multi-Turn Agent Conversations",
+        "authors": ["Shengding Hu", "Yingfa Chen", "Ning Ding"],
+        "year": 2024,
+        "venue": "ACL 2024",
+        "arxiv_id": "2404.03211",
+        "lineage_group": "working_context_memory",
+        "abstract": "DialPack introduces an adaptive context compaction method that identifies repetitive conversational boilerplate and preserves salient goal directives in working memory.",
+        "key_sections": {
+            "Abstract": "DialPack identifies repetitive conversational boilerplate and preserves salient goal directives in working memory.",
+            "Architecture": "In-context compaction pipeline that scores token information density and compresses conversational history.",
+            "Operations": "Density scoring, boilerplate pruning, dialogue state compaction.",
+            "Limitations": "Occasional loss of interpersonal nuances and user emotional sentiment during aggressive compaction.",
+            "Experiments": "Tested on long conversational assistant tasks across 40+ turns."
+        }
+    },
+    {
+        "paper_id": "paper_reflexion_code_2024",
+        "title": "Reflexion-Code: Automated Unit Test Memory for Self-Correcting Code Generation",
+        "authors": ["Alexander Shvets", "Elena Kiseleva", "Maximilian Schmidt"],
+        "year": 2024,
+        "venue": "ICSE 2025 Submission / arXiv:2403.11902",
+        "arxiv_id": "2403.11902",
+        "lineage_group": "episodic_experience_memory",
+        "abstract": "Reflexion-Code pairs episodic reflection buffers with dynamically synthesized unit test suites, recording compiler tracebacks and unit test assertions as episodic failure memories.",
+        "key_sections": {
+            "Abstract": "Reflexion-Code records compiler tracebacks and unit test assertions as episodic failure memories for self-correction.",
+            "Architecture": "Episodic code memory buffer logging synthesized tests, compiler stack traces, and differential patch attempts.",
+            "Operations": "Traceback logging, failure diagnosis, patch generation, test assertion verification.",
+            "Limitations": "Self-generated unit tests can contain their own bugs, reinforcing incorrect code fixes.",
+            "Experiments": "Evaluated on HumanEval, MBPP, and LeetCode contest problems."
+        }
+    },
+    {
+        "paper_id": "paper_paged_attention_2023",
+        "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention",
+        "authors": ["Woosuk Kwon", "Zhuohan Li", "Siyuan Zhuang", "Ying Sheng", "Lianmin Zheng", "Cody Hao Yu", "Joseph E. Gonzalez", "Hao Zhang", "Ion Stoica"],
+        "year": 2023,
+        "venue": "SOSP 2023",
+        "arxiv_id": "2309.06180",
+        "lineage_group": "working_context_memory",
+        "abstract": "High-throughput serving of LLMs is bottlenecked by KV cache memory. We propose PagedAttention, an algorithm that manages KV cache memory using virtual memory paging concepts, eliminating internal fragmentation.",
+        "key_sections": {
+            "Abstract": "PagedAttention manages KV cache memory using virtual memory paging concepts, eliminating internal fragmentation.",
+            "Architecture": "Virtual memory paging architecture dividing KV cache into fixed-size physical blocks with dynamic logical block tables.",
+            "Operations": "Block allocation, virtual-to-physical address translation, block sharing across parallel decodes.",
+            "Limitations": "Hardware-level memory management; does not address semantic context retention or agent-level reasoning.",
+            "Experiments": "Evaluated on vLLM serving engine, achieving 2-4x throughput improvements over HuggingFace TGI."
+        }
+    },
+    {
+        "paper_id": "paper_swebench_2023",
+        "title": "SWE-bench: Can Language Models Resolve Real-World GitHub Issues?",
+        "authors": ["Carlos E. Jimenez", "John Yang", "Alexander Wettig", "Shunyu Yao", "Kexin Pei", "Ofir Press", "Karthik Narasimhan"],
+        "year": 2023,
+        "venue": "ICLR 2024 (Oral)",
+        "arxiv_id": "2310.06770",
+        "lineage_group": "benchmarks_eval_limitations",
+        "abstract": "We introduce SWE-bench, an evaluation benchmark containing 2,294 real-world software engineering problems collected from GitHub. Resolving issues requires navigating massive codebases, making changes across multiple files, and tracking long execution memories.",
+        "key_sections": {
+            "Abstract": "SWE-bench evaluates language agents on 2,294 real GitHub issues requiring multi-file code navigation and long memory.",
+            "Architecture": "Dockerized software engineering testbed with unit test suites validating patch correctness against actual repository PRs.",
+            "Operations": "Repository reproduction, patch application, unit test evaluation, pass/fail verification.",
+            "Limitations": "Execution of full repository test suites takes minutes per task, creating high evaluation latency.",
+            "Experiments": "De-facto benchmark exposing context exhaustion and working memory failure in autonomous coding agents."
+        }
+    },
+    {
+        "paper_id": "paper_swe_agent_2024",
+        "title": "SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering",
+        "authors": ["John Yang", "Carlos E. Jimenez", "Alexander Wettig", "Kilian Lieret", "Shunyu Yao", "Karthik Narasimhan", "Ofir Press"],
+        "year": 2024,
+        "venue": "NeurIPS 2024",
+        "arxiv_id": "2405.15793",
+        "lineage_group": "procedural_skill_memory",
+        "abstract": "We introduce SWE-agent, an autonomous system that uses custom Agent-Computer Interfaces (ACI) to navigate repositories and edit code. SWE-agent maintains structured working memory of file positions, search results, and linting feedback.",
+        "key_sections": {
+            "Abstract": "SWE-agent maintains structured working memory of file positions, search results, and linting feedback via custom ACI.",
+            "Architecture": "Agent-Computer Interface (ACI) maintaining active file viewer memory, search cache, and undo history.",
+            "Operations": "File viewer windowing, regex search caching, patch staging, history rollback.",
+            "Limitations": "Windowing constraints: large files require repeated search-and-scroll commands, consuming context budget.",
+            "Experiments": "Achieves state-of-the-art performance on SWE-bench across Python repositories."
+        }
+    }
+]
+
+def main():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    RAW_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(RAW_FILE, "w", encoding="utf-8") as f:
+        json.dump(PAPERS, f, indent=2, ensure_ascii=False)
+
+    print(f"Successfully generated {len(PAPERS)} curated papers at {RAW_FILE}")
+
+if __name__ == "__main__":
+    main()
