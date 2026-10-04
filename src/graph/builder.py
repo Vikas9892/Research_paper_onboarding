@@ -33,15 +33,29 @@ class AgentMemoryGraph:
         # 1. Register all entities as graph nodes
         for cat_name, cat_entities in self.state.entities.items():
             for ent_key, ent_obj in cat_entities.items():
-                e_type = ent_obj.entity_type
-                self.entity_index[ent_obj.id] = (e_type, ent_obj.name)
-                self.graph.add_node(
-                    ent_obj.id,
-                    entity_type=e_type.value,
-                    name=ent_obj.name,
-                    description=ent_obj.description,
-                    payload=ent_obj.model_dump(),
-                )
+                if isinstance(ent_obj, dict):
+                    e_id = ent_obj["id"]
+                    e_type = EntityType(ent_obj["entity_type"])
+                    e_name = ent_obj.get("name", e_id)
+                    e_desc = ent_obj.get("description", "")
+                    payload = dict(ent_obj)
+                else:
+                    e_id = ent_obj.id
+                    e_type = ent_obj.entity_type
+                    e_name = ent_obj.name
+                    e_desc = ent_obj.description
+                    payload = ent_obj.model_dump()
+
+                self.entity_index[e_id] = (e_type, e_name)
+                # Unpack all properties into node attributes
+                node_attrs = {
+                    "entity_type": e_type.value,
+                    "name": e_name,
+                    "description": e_desc,
+                    "payload": payload,
+                }
+                node_attrs.update(payload)
+                self.graph.add_node(e_id, **node_attrs)
 
         # 2. Add edges and validate invariants
         extends_edges: List[Tuple[str, str]] = []

@@ -6,7 +6,7 @@ Strictly defines the 7 core entities and typed relationships.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 class EntityType(str, Enum):
@@ -97,6 +97,6 @@ class KnowledgeState(BaseModel):
     schema_version: str = "1.0.0"
     created_at: str = "2026-10-04"
     domain: str = "Agent Memory Architecture and Evolution"
-    entities: Dict[str, Dict[str, BaseEntity]] = Field(default_factory=dict)
+    entities: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
     relationships: List[RelationshipRecord] = Field(default_factory=list)
     evidence: Dict[str, EvidenceEntity] = Field(default_factory=dict)
