@@ -71,12 +71,15 @@ cd Research_paper_onboarding
 ```
 
 ### 2. Install Dependencies
-This project uses pure Python standard libraries alongside minimal, robust dependencies (`pydantic`, `networkx`, `rich`, `pytest`). No heavy database or external API keys are required.
+This project uses pure Python standard libraries alongside minimal, robust dependencies (`pydantic`, `networkx`, `rich`, `pytest`).
 
 ```bash
 pip install -e .
 ```
 *(Or `pip install -r requirements.txt`)*
+
+### 3. Environment Variables & Configuration
+**No external API keys, tokens, or environment variables are required.** The entire reasoning engine, graph traversals, and evidence verification run completely locally and offline using the serialized `knowledge/knowledge_state.json` file.
 
 ---
 
