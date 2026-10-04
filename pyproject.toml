@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-memory-kg"
+version = "0.1.0"
+description = "A research intelligence and decision reasoning system for agent memory mechanisms."
+authors = [{ name = "Vikas Tiwari", email = "vikast4843@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.7.0",
+    "networkx>=3.2.0",
+    "rich>=13.7.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.1.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "app*"]

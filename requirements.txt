@@ -1,0 +1,12 @@
+# Core data validation and graph reasoning
+pydantic>=2.7.0
+networkx>=3.2.0
+
+# Terminal presentation & CLI
+rich>=13.7.0
+
+# HTTP requests for paper metadata ingestion
+requests>=2.31.0
+
+# Testing suite
+pytest>=8.1.0
